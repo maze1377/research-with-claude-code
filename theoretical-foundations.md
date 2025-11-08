@@ -1,7 +1,7 @@
 # Theoretical Foundations for Multi-Agent Systems
-## A Research-Based Guide for API-Driven Development (2024-2025)
+## Research-Based Guide for API-Driven Development (2024-2025)
 
-**Purpose:** This document provides theoretical foundations for building multi-agent systems using LLM APIs (OpenAI, Anthropic) without developing custom models. Based on latest research papers and industry developments.
+**Purpose:** Theoretical foundations for building multi-agent systems using LLM APIs (OpenAI, Anthropic) without developing custom models.
 
 **Last Updated:** 2025-11-08
 
@@ -10,11 +10,11 @@
 ## Table of Contents
 
 1. [Core Reasoning Patterns](#core-reasoning-patterns)
-2. [Multi-Agent Collaboration Theory](#multi-agent-collaboration-theory)
+2. [Multi-Agent Theory: Five-Dimensional Framework](#multi-agent-theory-five-dimensional-framework)
 3. [Communication Protocols](#communication-protocols)
-4. [Tool Use and Function Calling](#tool-use-and-function-calling)
+4. [Tool Use Theory](#tool-use-theory)
 5. [Extended Thinking and Reasoning](#extended-thinking-and-reasoning)
-6. [Theoretical Framework for Architecture Selection](#theoretical-framework-for-architecture-selection)
+6. [Architecture Selection Framework](#architecture-selection-framework)
 7. [Research Papers and Citations](#research-papers-and-citations)
 
 ---
@@ -22,274 +22,186 @@
 ## Core Reasoning Patterns
 
 ### 1. ReAct (Reasoning + Acting)
-**Paper:** Yao et al., 2022 - "ReAct: Synergizing Reasoning and Acting in Language Models" (arXiv:2210.03629)
+**Paper:** Yao et al., 2022 - arXiv:2210.03629
 
-**Core Concept:**
-ReAct interleaves reasoning traces and task-specific actions in an iterative loop. The model generates verbal reasoning ("thoughts") before and after taking actions.
+**Pattern:** `Thought → Action → Observation → Thought → Action → ...`
 
-**Pattern Structure:**
-```
-Thought → Action → Observation → Thought → Action → Observation → ...
-```
+**Key Insights:**
+- Combines internal reasoning (CoT) with external information gathering
+- Reduces hallucination by grounding in real observations
+- Enables dynamic plan adaptation based on outcomes
+- Explicit reasoning traces provide interpretability
 
-**Key Theoretical Insights:**
-- **Internal vs External Knowledge:** Combines internal reasoning (CoT) with external information gathering (actions)
-- **Dynamic Adaptation:** Allows agents to adjust plans based on observed outcomes
-- **Reduced Hallucination:** Grounding reasoning in real observations reduces fabricated information
-- **Human Interpretability:** Explicit reasoning traces make agent behavior transparent
+**Performance:**
+- HotpotQA: 27.4% vs 14.5% baseline
+- Fever: 58.0% vs 43.1% baseline
+- ALFWorld: 34% vs 0% zero-shot
 
-**Practical Application for API Users:**
-- Use system prompts to establish the ReAct pattern
-- Structure tool calls as "actions" in the loop
-- Request explicit reasoning before tool calls
-- Parse observations and feed them back for next iteration
-
-**Performance Metrics from Paper:**
-- HotpotQA: ReAct achieves 27.4% success (vs 14.5% baseline)
-- Fever: 58.0% success (vs 43.1% baseline)
-- ALFWorld: 34% success (vs 0% zero-shot)
-
-### 2. Chain-of-Thought (CoT)
-**Paper:** Wei et al., 2022 - "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models" (arXiv:2201.11903)
-
-**Core Concept:**
-Prompt the model to generate intermediate reasoning steps before producing the final answer.
-
-**Theoretical Foundation:**
-- **Decomposition:** Complex reasoning broken into manageable steps
-- **Sequential Processing:** Each step builds on previous steps
-- **Emergent Ability:** Only appears in models with sufficient scale (>100B parameters)
-
-**Variants:**
-1. **Few-Shot CoT:** Provide examples with reasoning chains
-2. **Zero-Shot CoT:** Simply add "Let's think step by step"
-3. **Self-Consistency CoT:** Sample multiple reasoning paths, select most consistent answer
-
-**Key Findings:**
-- Arithmetic reasoning: 17.9% → 78.5% accuracy (GSM8K with PaLM 540B)
-- Commonsense reasoning: 74.0% → 83.8% (StrategyQA)
-- Symbolic reasoning: 37.1% → 58.8% (Last Letter Concatenation)
-
-**API Implementation:**
-```python
-# Zero-Shot CoT
-prompt = f"""
-Question: {question}
-
-Let's approach this step-by-step:
-1. First, identify the key information
-2. Then, break down the problem
-3. Finally, solve it systematically
-"""
-
-# Self-Consistency CoT (sample multiple times)
-responses = [api.complete(prompt, temperature=0.7) for _ in range(5)]
-# Select most common answer
-```
-
-### 3. Tree of Thoughts (ToT)
-**Paper:** Yao et al., 2023 - "Tree of Thoughts: Deliberate Problem Solving with Large Language Models" (arXiv:2305.10601)
-
-**Core Concept:**
-Explores multiple reasoning paths simultaneously in a tree structure, evaluating and backtracking as needed.
-
-**Theoretical Framework:**
-- **Search Space:** Each node represents a partial solution (thought)
-- **Lookahead:** Evaluate future potential of thoughts
-- **Backtracking:** Abandon unpromising paths
-- **Breadth vs Depth:** Balance exploration and exploitation
-
-**Search Strategies:**
-1. **BFS (Breadth-First Search):** Maintain k most promising paths at each level
-2. **DFS (Depth-First Search):** Explore one path fully before backtracking
-
-**Performance Improvements:**
-- Game of 24: 4% → 74% success rate
-- Creative Writing: 6.2% → 7.5% coherence score
-- Mini Crosswords: 60% → 78% word success rate
-
-**API Implementation Considerations:**
-- Requires multiple API calls per decision point
-- Cost scales with breadth and depth parameters
-- Best for problems with clear success criteria
-- Implement thought evaluation using separate API calls
-
-**ToT vs ReAct vs CoT:**
-| Pattern | Search Strategy | API Calls | Best For |
-|---------|----------------|-----------|----------|
-| CoT | Linear chain | 1 per problem | Sequential reasoning |
-| ReAct | Linear with feedback | 2-10 per problem | Tool-augmented tasks |
-| ToT | Tree search | 10-100+ per problem | Complex search problems |
-
-### 4. Self-Consistency
-**Concept:** Generate multiple reasoning paths and select the most consistent answer through majority voting.
-
-**Theoretical Basis:**
-- **Diversity:** Different reasoning paths may arrive at correct answer via different routes
-- **Robustness:** Reduces impact of individual reasoning errors
-- **Emergent Agreement:** Correct answers tend to cluster
-
-**Implementation:**
-```python
-# Sample multiple independent chains
-chains = [cot_prompt(question, temperature=0.7) for _ in range(k)]
-
-# Extract final answers
-answers = [parse_answer(chain) for chain in chains]
-
-# Majority vote
-from collections import Counter
-final_answer = Counter(answers).most_common(1)[0][0]
-```
-
-### 5. Generated Knowledge Prompting
-**Concept:** First generate relevant knowledge, then use it to answer the question.
-
-**Two-Stage Process:**
-1. **Knowledge Generation:** "What facts are relevant to this question?"
-2. **Answer Generation:** Use generated knowledge to answer
-
-**Benefits:**
-- Externalizes internal knowledge
-- Reduces hallucination by making knowledge explicit
-- Allows verification of generated facts
+**Implementation:** System prompts establish pattern; tool calls are "actions"; parse observations for iteration. See patterns-antipatterns.md for examples.
 
 ---
 
-## Multi-Agent Collaboration Theory
+### 2. Chain-of-Thought (CoT)
+**Paper:** Wei et al., 2022 - arXiv:2201.11903
 
-### Five-Dimensional Framework
+**Core Concept:** Intermediate reasoning steps before final answer.
+
+**Theoretical Foundation:**
+- Decomposition of complex reasoning into manageable steps
+- Sequential processing with step dependencies
+- Emergent ability (>100B parameters required)
+
+**Variants:**
+1. **Few-Shot CoT:** Examples with reasoning chains
+2. **Zero-Shot CoT:** "Let's think step by step"
+3. **Self-Consistency CoT:** Multiple paths, majority voting
+
+**Performance Gains:**
+- Arithmetic (GSM8K): 17.9% → 78.5%
+- Commonsense (StrategyQA): 74.0% → 83.8%
+- Symbolic (Last Letter): 37.1% → 58.8%
+
+---
+
+### 3. Tree of Thoughts (ToT)
+**Paper:** Yao et al., 2023 - arXiv:2305.10601
+
+**Core Concept:** Explore multiple reasoning paths simultaneously; evaluate and backtrack.
+
+**Framework:**
+- Search space: nodes = partial solutions
+- Lookahead: evaluate future potential
+- Backtracking: abandon unpromising paths
+- Balance: breadth vs depth exploration
+
+**Search Strategies:**
+- **BFS:** Maintain k most promising paths per level
+- **DFS:** Explore one path fully before backtracking
+
+**Performance:**
+- Game of 24: 4% → 74%
+- Creative Writing: 6.2% → 7.5%
+- Mini Crosswords: 60% → 78%
+
+**Cost:** 10-100+ API calls per problem (vs 1 for CoT, 2-10 for ReAct)
+
+---
+
+### 4. Self-Consistency
+**Theoretical Basis:**
+- Diverse reasoning paths reach correct answer via different routes
+- Robustness through majority voting
+- Emergent agreement on correct solutions
+
+**Process:** Generate k independent chains (temperature > 0), extract answers, majority vote.
+
+---
+
+### 5. Generated Knowledge Prompting
+**Concept:** Generate relevant knowledge first, then use it to answer.
+
+**Benefits:**
+- Externalizes internal knowledge
+- Reduces hallucination via explicit facts
+- Enables knowledge verification
+
+---
+
+## Multi-Agent Theory: Five-Dimensional Framework
+
 **Source:** arXiv:2501.06322v1 - "Multi-Agent Collaboration Mechanisms: A Survey" (2025)
 
-#### 1. Actors (Who Collaborates?)
-**Homogeneous Agents:**
-- Same capabilities and models
+### 1. Actors (Who Collaborates?)
+
+**Homogeneous:**
+- Same capabilities/models
 - Easier coordination
-- Uniform behavior patterns
+- Single API, different system prompts
 
-**Heterogeneous Agents:**
-- Different specializations (researcher, analyst, writer)
+**Heterogeneous:**
+- Different specializations
 - Complementary skills
-- More complex coordination
+- Multiple APIs/models (GPT-4o reasoning + Claude writing)
 
-**Theoretical Consideration for API Users:**
-- Homogeneous: Single API with different system prompts
-- Heterogeneous: Multiple APIs or models (GPT-4o for reasoning, Claude for writing)
+---
 
-#### 2. Collaboration Types (How They Interact?)
+### 2. Collaboration Types (How They Interact?)
 
 **Cooperation:**
-- Agents work toward shared goal
-- No conflicting objectives
-- Shared reward/success criteria
+- Shared goal, no conflicts
+- Common success criteria
 
 **Competition:**
-- Agents have opposing objectives
-- Useful for adversarial validation
-- Example: Debate systems, red-team/blue-team
+- Opposing objectives
+- Adversarial validation (debate, red-team/blue-team)
 
 **Coopetition:**
-- Mix of cooperation and competition
-- Agents compete to contribute best solution
-- Team success depends on individual excellence
+- Mix cooperation/competition
+- Compete to contribute best solution
+- Team success via individual excellence
 
-**API Implementation:**
-```python
-# Cooperation: Sequential workflow
-research_output = researcher_agent(topic)
-analysis = analyst_agent(research_output)
-report = writer_agent(analysis)
+---
 
-# Competition: Debate
-argument_a = agent_for(position="for")
-argument_b = agent_against(position="against")
-judge_decision = judge_agent([argument_a, argument_b])
-
-# Coopetition: Multiple solutions, best selected
-solutions = [agent(task) for agent in specialist_agents]
-best_solution = evaluator_agent(solutions)
-```
-
-#### 3. Collaboration Structures (Topology)
+### 3. Structures (Topology)
 
 **Centralized (Hub-and-Spoke):**
 - One coordinator, multiple workers
-- Coordinator makes all routing decisions
-- Clear control flow, single point of failure
+- Clear control flow
+- Low coordination overhead, single point of failure
 
 **Decentralized (Peer-to-Peer):**
-- Agents communicate directly
+- Direct agent communication
 - No central authority
-- More resilient, harder to coordinate
+- High resilience, harder coordination
 
-**Hierarchical (Tree Structure):**
-- Multiple layers of coordination
+**Hierarchical (Tree):**
+- Multiple coordination layers
 - Sub-teams with local coordinators
-- Scales to large agent counts
+- Best scalability
 
-**Theoretical Trade-offs:**
-| Structure | Coordination Overhead | Scalability | Fault Tolerance | Best For |
-|-----------|---------------------|-------------|-----------------|----------|
+**Trade-offs:**
+
+| Structure | Coordination | Scalability | Fault Tolerance | Best For |
+|-----------|-------------|-------------|-----------------|----------|
 | Centralized | Low | Medium | Low | Small teams, clear hierarchy |
-| Decentralized | High | Low | High | Adaptive, exploratory tasks |
+| Decentralized | High | Low | High | Adaptive, exploratory |
 | Hierarchical | Medium | High | Medium | Large teams, modular tasks |
 
-#### 4. Collaboration Strategies
+---
+
+### 4. Collaboration Strategies
 
 **Rule-Based:**
-- Predefined workflows
-- Static routing (if-then logic)
-- Deterministic behavior
-- Low overhead, inflexible
+- Predefined workflows, static routing
+- Deterministic, low overhead
+- Inflexible
 
 **Role-Based:**
 - Agents assigned specific roles
-- Role determines behavior and responsibilities
-- Common in CrewAI approach
+- Role determines behavior
+- Common in CrewAI
 
 **Model-Based:**
-- LLM decides routing and collaboration
+- LLM decides routing/collaboration
 - Dynamic adaptation
 - Higher cost, more flexible
 
-**API Implementation Example:**
-```python
-# Rule-Based
-if task_type == "research":
-    agent = research_agent
-elif task_type == "analysis":
-    agent = analyst_agent
+---
 
-# Model-Based (LLM routing)
-router_prompt = f"""
-Task: {task}
-Available agents: {agent_descriptions}
-Which agent should handle this? Respond with agent name only.
-"""
-selected_agent = llm.invoke(router_prompt).content.strip()
-```
-
-#### 5. Coordination Mechanisms
+### 5. Coordination Mechanisms
 
 **Message Passing:**
-- Agents send/receive structured messages
-- Asynchronous communication
+- Structured messages, asynchronous
 - Requires message queuing
 
 **Shared Memory:**
-- Common state accessible to all agents
-- Synchronous access patterns
-- Example: LangGraph's shared state
+- Common state, synchronous access
+- Example: LangGraph StateGraph
 
 **Blackboard System:**
 - Shared knowledge repository
-- Agents read/write to blackboard
 - Opportunistic collaboration
-
-**For API Users:**
-- Message Passing: Implement with queues or databases
-- Shared Memory: Use LangGraph StateGraph with TypedDict
-- Blackboard: Implement with vector database or knowledge graph
+- Implementation: vector database or knowledge graph
 
 ---
 
@@ -298,227 +210,111 @@ selected_agent = llm.invoke(router_prompt).content.strip()
 ### 1. Model Context Protocol (MCP)
 **Source:** Anthropic 2025
 
-**Purpose:** Standardized protocol for LLM applications to access context from various sources.
+**Purpose:** Standardized protocol for LLM context access.
 
 **Architecture:**
-- **Hosts:** LLM applications (Claude Desktop, IDEs)
-- **Clients:** Protocol clients inside host application
-- **Servers:** Lightweight programs exposing context (databases, APIs, files)
+- Hosts: LLM applications (Claude Desktop, IDEs)
+- Clients: Protocol clients inside host
+- Servers: Programs exposing context (databases, APIs, files)
 
-**Key Features:**
-- Decoupled architecture
-- Unopinionated integration
-- Server lifecycle management
+**Features:** Decoupled architecture, unopinionated integration, lifecycle management
 
-**For Multi-Agent Systems:**
-- Agents can share context via MCP servers
-- Standardized tool/resource interfaces
-- Reduces custom integration code
+**Multi-Agent Value:** Shared context via MCP servers, standardized interfaces, reduced custom integration.
+
+---
 
 ### 2. Agent Communication Protocol (ACP)
-**Purpose:** Enable structured communication between heterogeneous agents.
 
-**Message Types:**
+**Message Structure:**
 - **Performatives:** Speech acts (inform, request, query, propose)
-- **Content:** Actual message payload
-- **Metadata:** Sender, receiver, conversation ID, reply-to
+- **Content:** Message payload
+- **Metadata:** Sender, receiver, conversation_id, reply_to
 
-**Example Message Structure:**
-```json
-{
-  "performative": "request",
-  "sender": "agent_a",
-  "receiver": "agent_b",
-  "conversation_id": "conv_123",
-  "content": {
-    "action": "research",
-    "topic": "multi-agent systems"
-  },
-  "reply_to": "msg_456"
-}
-```
+**Purpose:** Structured heterogeneous agent communication.
+
+---
 
 ### 3. Agent-to-Agent Protocol (A2A)
-**Focus:** Direct peer-to-peer agent communication.
 
 **Patterns:**
 - **Request-Response:** Synchronous interaction
 - **Publish-Subscribe:** Broadcast to interested agents
 - **Query-Inform:** Information seeking
 
-**Implementation with APIs:**
-```python
-class AgentMessage:
-    def __init__(self, sender, receiver, content, msg_type):
-        self.sender = sender
-        self.receiver = receiver
-        self.content = content
-        self.msg_type = msg_type  # request, inform, query
-        self.timestamp = time.time()
+**Focus:** Direct peer-to-peer communication.
 
-# Agent A sends request
-request = AgentMessage(
-    sender="researcher",
-    receiver="analyst",
-    content={"data": research_output},
-    msg_type="inform"
-)
-
-# Agent B processes and responds
-response = agent_b.process(request)
-```
+---
 
 ### 4. Handoffs (LangGraph 2025)
-**New Feature:** Explicit agent-to-agent transitions.
 
-**Pattern:**
-```python
-from langgraph.types import Command
-
-def agent_a(state) -> Command[Literal["agent_b", END]]:
-    # Process
-    result = llm.invoke(state.messages)
-
-    # Decide handoff
-    if needs_specialist:
-        return Command(
-            goto="agent_b",
-            update={"messages": [result], "context": "handoff from A"}
-        )
-    return Command(goto=END)
-```
+**Concept:** Explicit agent-to-agent transitions with state preservation.
 
 **Benefits:**
 - Explicit control flow
 - Type-safe transitions
-- Preserves state across handoffs
+- State continuity across handoffs
+
+**Implementation:** Use `Command` with `goto` and state `update`. See cookbook for examples.
 
 ---
 
-## Tool Use and Function Calling
+## Tool Use Theory
 
 ### Theoretical Framework
 
-**Core Concept:** Extend LLM capabilities by connecting to external tools/APIs.
-
 **Pattern:**
-1. **Tool Description:** LLM receives tool specifications (JSON schema)
-2. **Intent Detection:** LLM decides when to call tool
-3. **Parameter Generation:** LLM generates function arguments
-4. **Execution:** External system executes tool
-5. **Result Integration:** Tool output fed back to LLM
+1. Tool Description → LLM receives JSON schema
+2. Intent Detection → LLM decides when to call
+3. Parameter Generation → LLM generates arguments
+4. Execution → External system executes
+5. Result Integration → Output fed back to LLM
 
-### API-Specific Implementations
+---
 
-#### OpenAI Function Calling (2024)
+### API-Specific Best Practices
+
+#### OpenAI (2024)
 
 **Key Developments:**
-- gpt-4o-2024-08-06: 100% accuracy on complex JSON schema (vs 40% for gpt-4-0613)
+- gpt-4o-2024-08-06: 100% accuracy complex JSON (vs 40% gpt-4-0613)
 - Structured Outputs with `strict: true`
-- Up to 128 tools per request (practical limit: 5-10 for accuracy)
-
-**Best Practices from Research:**
-
-1. **Tool Documentation:**
-   - Each tool must have clear, complete documentation
-   - Parameter descriptions are critical for correct usage
-   - Use examples in descriptions
-
-2. **Tool Count Management:**
-   ```python
-   # BAD: Too many tools
-   tools = [tool1, tool2, ..., tool128]  # High error rate
-
-   # GOOD: Use RAG to select relevant tools
-   relevant_tools = rag_select_tools(user_query, all_tools, top_k=5)
-   response = openai.chat.completions.create(
-       model="gpt-4o",
-       messages=messages,
-       tools=relevant_tools
-   )
-   ```
-
-3. **Structured Outputs:**
-   ```python
-   # Guaranteed schema adherence
-   response = openai.chat.completions.create(
-       model="gpt-4o-2024-08-06",
-       messages=messages,
-       tools=[{
-           "type": "function",
-           "function": {
-               "name": "get_weather",
-               "strict": True,  # Enforces schema
-               "parameters": {
-                   "type": "object",
-                   "properties": {
-                       "location": {"type": "string"},
-                       "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
-                   },
-                   "required": ["location"],
-                   "additionalProperties": False
-               }
-           }
-       }]
-   )
-   ```
-
-4. **Error Handling:**
-   - Tools may be called with wrong parameters
-   - Tools may be called when they shouldn't be
-   - Implement validation before execution
-
-#### Anthropic Tool Use
+- 128 tools max (practical: 5-10 for accuracy)
 
 **Best Practices:**
+1. **Documentation:** Clear, complete tool descriptions with examples
+2. **Tool Management:** Use RAG to select 5-10 relevant tools from large libraries
+3. **Structured Outputs:** Use `strict: true` for schema adherence
+4. **Validation:** Validate parameters before execution
 
-1. **Tool Descriptions:**
-   - 1,024 character limit per tool description
-   - Use clear, imperative language
-   - Specify when NOT to use the tool
+---
 
-2. **Computer Use (2024):**
-   - Claude can control computer interfaces
-   - Beta feature with extended capabilities
-   - Useful for UI testing, web automation
+#### Anthropic
+
+**Best Practices:**
+1. Tool descriptions: 1,024 char limit, imperative language, specify when NOT to use
+2. Computer Use (2024): Beta feature for UI control, web automation
+
+---
 
 ### ToolRegistry Pattern
-**Paper:** "ToolRegistry: Efficient Tool Management for LLM Agents"
 
-**Concept:** Dynamic tool selection based on task context.
+**Concept:** Dynamic tool selection via embeddings.
 
-**Implementation:**
-```python
-class ToolRegistry:
-    def __init__(self):
-        self.tools = {}
-        self.tool_embeddings = {}
-
-    def register(self, tool, description):
-        self.tools[tool.name] = tool
-        self.tool_embeddings[tool.name] = embed(description)
-
-    def select_tools(self, query, top_k=5):
-        query_embedding = embed(query)
-        similarities = {
-            name: cosine_similarity(query_embedding, emb)
-            for name, emb in self.tool_embeddings.items()
-        }
-        return sorted(similarities.items(), key=lambda x: x[1], reverse=True)[:top_k]
-
-# Usage
-registry = ToolRegistry()
-relevant_tools = registry.select_tools(user_query, top_k=5)
-```
+**Process:** Register tools with descriptions → embed descriptions → at runtime, embed query → cosine similarity → select top-k tools
 
 **Benefits:**
-- Reduces token usage
-- Improves accuracy (fewer options = better selection)
+- Reduced token usage
+- Improved accuracy (fewer options)
 - Scales to large tool libraries
 
-### Comparative Analysis: GPT-4o vs Claude vs Gemini
+**Implementation:** See cookbook for code examples.
 
-**Function Calling Accuracy (2024):**
+---
+
+### Comparative Performance (2024)
+
+**Function Calling Accuracy:**
+
 | Model | Complex Schema | Simple Schema | Overall |
 |-------|---------------|---------------|---------|
 | GPT-4o-2024-08-06 | 100% | 100% | 100% |
@@ -535,81 +331,56 @@ relevant_tools = registry.select_tools(user_query, top_k=5)
 
 ### Anthropic Extended Thinking (2024-2025)
 
-**Core Concept:** "Serial test-time compute" - multiple sequential reasoning steps before final output.
+**Core Concept:** Serial test-time compute—multiple sequential reasoning steps before output.
 
-**Claude 3.7 Sonnet Extended Thinking:**
-- Accuracy improves logarithmically with thinking tokens
-- Can use tools during extended thinking
-- Two modes: instant response vs extended reasoning
+**Claude 3.7 Sonnet:**
+- Accuracy scales logarithmically with thinking tokens
+- Tool use during extended thinking
+- Dual modes: instant vs extended reasoning
 
-**Performance Results:**
-- GPQA (Graduate-Level Questions): 84.8% overall, 96.5% on physics
-- AIME 2024 (Math Competition): 61.3% pass@1, 80.0% pass@64
-- Improvement scales with allowed thinking tokens
+**Performance:**
+- GPQA (Graduate Questions): 84.8% overall, 96.5% physics
+- AIME 2024 (Math): 61.3% pass@1, 80.0% pass@64
 
-**Implementation:**
-```python
-response = anthropic.messages.create(
-    model="claude-3-7-sonnet-20250219",
-    max_tokens=16000,
-    thinking={
-        "type": "enabled",
-        "budget_tokens": 10000  # Tokens for thinking
-    },
-    messages=[{"role": "user", "content": "Solve this complex problem..."}]
-)
+**Use Cases:** Complex math proofs, multi-step science reasoning, code debugging, strategic planning
 
-# Access thinking process
-thinking = response.content[0].thinking
-final_answer = response.content[1].text
-```
+**API:** Use `thinking` parameter with `budget_tokens`. See API docs for implementation.
 
-**Use Cases:**
-- Complex mathematical proofs
-- Multi-step scientific reasoning
-- Code debugging and optimization
-- Strategic planning
+---
 
 ### Claude 4 (May 2025)
 
 **Hybrid Reasoning:**
-- Opus 4 and Sonnet 4 offer dual modes
-- Near-instant responses for simple queries
-- Extended thinking for complex problems
-- Tool use during thinking process
+- Opus 4 and Sonnet 4 dual modes
+- Near-instant for simple queries
+- Extended thinking for complexity
+- Tool use during thinking
 
-**Reasoning Faithfulness Research:**
-**Paper:** "Reasoning Models Don't Always Say What They Think" (Anthropic, 2025)
+**Research Finding:** "Reasoning Models Don't Always Say What They Think" (Anthropic, 2025)
+- CoT outputs less faithful on harder tasks
+- **Implication:** Don't assume reasoning traces = actual process; validate independently
 
-**Key Finding:** Chain-of-thought outputs are less faithful on harder tasks.
-
-**Implication for API Users:**
-- Don't assume reasoning traces reflect actual model process
-- Validate outputs independently
-- Use multiple reasoning approaches for critical tasks
+---
 
 ### OpenAI o1/o3 Reasoning Models
 
 **Architecture:**
 - Extended inference-time computation
-- Trained with reinforcement learning to reason
-- Performs well on complex STEM tasks
+- RL-trained reasoning
+- Strong STEM performance
 
 **Performance:**
-- Competitive programming: Significantly outperforms GPT-4o
-- PhD-level science questions: High accuracy
-- Mathematical reasoning: Strong performance
+- Competitive programming: Significantly > GPT-4o
+- PhD-level science: High accuracy
+- Mathematical reasoning: Strong
 
-**Cost Consideration:**
-- More expensive than standard models
-- Justified for complex reasoning tasks
-- Not needed for simple queries
+**Cost:** More expensive; justified for complex reasoning only.
 
 ---
 
-## Theoretical Framework for Architecture Selection
+## Architecture Selection Framework
 
-### Decision Tree for Single vs Multi-Agent
+### Decision Tree: Single vs Multi-Agent
 
 ```
 Is task complex with multiple distinct subtasks?
@@ -623,58 +394,56 @@ Is task complex with multiple distinct subtasks?
       └─ No → Homogeneous Multi-Agent
 ```
 
-### Collaboration vs Supervisor vs Swarm
+---
+
+### Pattern Selection
 
 **Collaboration (Shared Scratchpad):**
-- **Use when:** Agents need to share context continuously
-- **Theoretical basis:** Common ground theory
-- **API efficiency:** Low (single shared state)
-- **Example:** Code review where multiple agents examine same code
+- **Use:** Continuous context sharing needed
+- **Theory:** Common ground theory
+- **Example:** Code review with multiple agent examination
 
 **Supervisor (Hierarchical):**
-- **Use when:** Clear task decomposition possible
-- **Theoretical basis:** Delegation and coordination theory
-- **API efficiency:** Medium (one supervisor call + N worker calls)
-- **Example:** SQL query generation (router → schema_lookup → query_builder)
+- **Use:** Clear task decomposition
+- **Theory:** Delegation and coordination
+- **Example:** SQL generation (router → schema → builder)
 
 **Swarm (Peer-to-Peer):**
-- **Use when:** Dynamic, adaptive routing needed
-- **Theoretical basis:** Emergent coordination
-- **API efficiency:** Variable (agents decide next steps)
-- **Example:** Complex research where agents follow leads dynamically
+- **Use:** Dynamic, adaptive routing
+- **Theory:** Emergent coordination
+- **Example:** Complex research following dynamic leads
 
-### Benchmarking Data (LangGraph, 2024)
+---
 
-**Single Agent Performance:**
-```
-Domains: 1-2  → High accuracy
-Domains: 3+   → Sharp decline (>40% error rate)
-Token usage: Scales linearly with domain count
-```
+### Benchmarking (LangGraph 2024)
 
-**Multi-Agent Performance:**
-```
-Supervisor:
-- Domains: 2-5 → Stable accuracy
-- Token usage: Flat (~30% increase vs single agent)
+**Single Agent:**
+- 1-2 domains: High accuracy
+- 3+ domains: >40% error rate
+- Token usage: Linear scaling
+
+**Multi-Agent:**
+
+**Supervisor:**
+- 2-5 domains: Stable accuracy
+- Token usage: ~30% increase (flat)
 - Maintainability: Modular
 
-Swarm:
-- Domains: 2-10 → Best accuracy
-- Token usage: Flat (most efficient)
+**Swarm:**
+- 2-10 domains: Best accuracy
+- Token usage: Most efficient (flat)
 - Maintainability: Most modular
-```
 
-**Recommendation for API Users:**
+**Recommendations:**
 - Single agent: 1-2 domains only
 - Supervisor: 2-5 well-defined domains
-- Swarm: 5+ domains or unclear domain boundaries
+- Swarm: 5+ domains or unclear boundaries
 
 ---
 
 ## Research Papers and Citations
 
-### Core Reasoning Papers
+### Core Reasoning
 
 1. **ReAct: Synergizing Reasoning and Acting in Language Models**
    - Yao et al., 2022
@@ -691,126 +460,126 @@ Swarm:
    - arXiv:2305.10601
    - https://arxiv.org/abs/2305.10601
 
-### Multi-Agent Systems Papers
+---
+
+### Multi-Agent Systems
 
 4. **Multi-Agent Collaboration Mechanisms: A Survey**
    - arXiv:2501.06322v1, 2025
-   - Five-dimensional framework for multi-agent systems
+   - Five-dimensional framework
 
-5. **X-MAS: Extreme Multi-Agent Systems** (2025)
+5. **X-MAS: Extreme Multi-Agent Systems**
+   - 2025
    - Large-scale agent coordination
 
-6. **Infrastructure for AI Agents** (2025)
+6. **Infrastructure for AI Agents**
+   - 2025
    - Scalable multi-agent deployments
 
-### Tool Use and Function Calling
+---
+
+### Tool Use and Communication
 
 7. **ToolRegistry: Efficient Tool Management for LLM Agents**
-   - Dynamic tool selection based on embeddings
+   - Dynamic tool selection via embeddings
 
 8. **Model Context Protocol (MCP)**
    - Anthropic, 2025
-   - Standardized context sharing for LLMs
+   - Standardized context sharing
 
-### API-Specific Research
+9. **Agent Communication Protocol (ACP)**
+   - Multi-agent communication survey, 2025
 
-9. **GPT-4o System Card**
-   - OpenAI, August 2024
-   - Safety evaluations and capabilities
+10. **Agent-to-Agent Protocol (A2A)**
+    - Peer-to-peer agent communication
 
-10. **Claude 3 Model Family: Opus, Sonnet, Haiku**
+---
+
+### API Research
+
+11. **GPT-4o System Card**
+    - OpenAI, August 2024
+    - Safety evaluations and capabilities
+
+12. **Claude 3 Model Family: Opus, Sonnet, Haiku**
     - Anthropic Model Card, 2024
 
-11. **Claude 3.5 Sonnet Model Card Addendum**
+13. **Claude 3.5 Sonnet Model Card Addendum**
     - Anthropic, 2024
 
-12. **Reasoning Models Don't Always Say What They Think**
+14. **Reasoning Models Don't Always Say What They Think**
     - Anthropic, 2025
     - Reasoning faithfulness research
 
-### Communication Protocols
+---
 
-13. **Agent Communication Protocol (ACP)**
-    - Multi-agent communication survey, 2025
+### Documentation
 
-14. **Agent-to-Agent Protocol (A2A)**
-    - Peer-to-peer agent communication
-
-### Best Practices Documentation
-
-15. **Prompt Engineering Overview - Claude Docs**
+15. **Prompt Engineering Overview**
     - https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview
 
-16. **Structured Outputs in the API - OpenAI**
+16. **Structured Outputs in the API**
     - https://openai.com/index/introducing-structured-outputs-in-the-api/
 
-17. **Function Calling and Other API Updates - OpenAI**
+17. **Function Calling and Other API Updates**
     - https://openai.com/index/function-calling-and-other-api-updates/
 
-18. **Building with Extended Thinking - Claude API**
+18. **Building with Extended Thinking**
     - https://docs.claude.com/en/docs/build-with-claude/extended-thinking
 
 ---
 
-## Key Takeaways for API Users
+## Key Decision Guidelines
 
-### 1. Choose the Right Reasoning Pattern
+### Reasoning Pattern Selection
 - **Simple tasks:** Direct prompting
 - **Sequential reasoning:** Chain-of-Thought
 - **Tool-augmented:** ReAct
 - **Complex search:** Tree of Thoughts
 - **Robustness:** Self-Consistency
 
-### 2. Architect Multi-Agent Systems Thoughtfully
-- **1-2 domains:** Stay with single agent
-- **3-5 domains:** Use supervisor pattern
-- **5+ domains:** Consider swarm pattern
+### Multi-Agent Architecture
+- **1-2 domains:** Single agent
+- **3-5 domains:** Supervisor pattern
+- **5+ domains:** Swarm pattern
 - **Dynamic tasks:** Peer-to-peer with handoffs
 
-### 3. Optimize Tool/Function Calling
-- **Limit tools:** 5-10 per request (use RAG for selection)
-- **Document thoroughly:** Clear descriptions essential
-- **Use structured outputs:** Guarantee schema adherence (GPT-4o)
-- **Validate inputs:** Don't trust model-generated parameters blindly
+### Tool Optimization
+- **Limit:** 5-10 tools per request
+- **Selection:** Use RAG for large tool libraries
+- **Structured outputs:** Guarantee schema adherence (GPT-4o)
+- **Validation:** Always validate generated parameters
 
-### 4. Leverage Extended Thinking Strategically
-- **Complex reasoning:** Use Claude 3.7+ extended thinking
-- **Cost-sensitive:** Use o1/o3 only when justified
+### Extended Thinking
+- **Complex reasoning:** Claude 3.7+ extended thinking
+- **Cost-sensitive:** o1/o3 only when justified
 - **Real-time:** Standard models for instant responses
-- **Critical tasks:** Combine extended thinking with validation
+- **Critical tasks:** Combine with validation
 
-### 5. Implement Robust Communication
-- **Shared state:** Use LangGraph for simple coordination
-- **Message passing:** For complex async patterns
-- **Handoffs:** Explicit control flow with Command tool
-- **Protocols:** Standardize with MCP when possible
+### Communication
+- **Simple coordination:** LangGraph shared state
+- **Complex async:** Message passing
+- **Explicit control:** Handoffs with Command
+- **Standardization:** MCP when possible
 
-### 6. Validate and Verify
+### Validation
 - **Reasoning traces:** Don't assume faithfulness
 - **Tool outputs:** Verify before using
-- **Multi-agent outputs:** Cross-validate between agents
-- **Critical decisions:** Use human-in-the-loop
+- **Multi-agent outputs:** Cross-validate
+- **Critical decisions:** Human-in-the-loop
 
 ---
 
-## Conclusion
+## Production Recommendations (2025)
 
-Building effective multi-agent systems with LLM APIs requires:
+**Starting Point:**
+- Single-agent ReAct for tool-augmented tasks
+- Supervisor pattern for 3-5 clear domains
+- Reserve swarm for truly complex, exploratory tasks
+- Extended thinking for critical reasoning
+- Always validate outputs for high-stakes decisions
 
-1. **Theoretical Understanding:** Know when and why to use different patterns
-2. **API Knowledge:** Understand model-specific capabilities and limitations
-3. **Architecture Selection:** Choose patterns based on task characteristics
-4. **Optimization:** Balance cost, latency, and quality
-5. **Validation:** Verify outputs and reasoning
-6. **Continuous Learning:** Stay updated with latest research and capabilities
+**Theoretical Foundation:**
+Match approach to problem complexity while managing API costs and latency. The research demonstrates clear evolution from simple prompting to sophisticated multi-agent architectures—choose based on task characteristics, not novelty.
 
-The research shows clear evolution from simple prompting to sophisticated multi-agent architectures. The key is matching the approach to the problem complexity while managing API costs and latency constraints.
-
-For most production use cases in 2025:
-- Start with single-agent ReAct for tool-augmented tasks
-- Use supervisor pattern when you have 3-5 clear domains
-- Reserve swarm patterns for truly complex, exploratory tasks
-- Leverage extended thinking for critical reasoning tasks
-- Always validate outputs, especially for high-stakes decisions
-
-The theoretical foundations provided here should guide architecture decisions and implementation choices for robust, efficient multi-agent systems using commercial LLM APIs.
+**For implementation examples:** See patterns-antipatterns.md and production-cookbook.md
