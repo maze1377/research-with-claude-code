@@ -138,6 +138,17 @@ Conduct comprehensive research across GitHub repositories and open-source projec
     - Cost optimization recipes (model cascading, intelligent routing)
     - Difficulty ratings and cost estimates for each recipe
 
+13. **topics.md** - Complete knowledge map and mastery checklist (2025)
+    - 36 comprehensive questions across business, technology, and operations
+    - Business & strategy (6 questions: build vs buy, ROI, risk management)
+    - Technical architecture (14 questions: patterns, models, state, communication)
+    - Implementation & development (6 questions: prompting, tools, optimization)
+    - Production & operations (3 questions: monitoring, debugging, deployment)
+    - Cost & resource management (3 questions: optimization, budgets, latency)
+    - Domain-specific applications (4 questions: code review, research, support, content)
+    - Decision frameworks and checklists (templates, readiness checks)
+    - Complete answer framework for each question with data and references
+
 ## Success Criteria
 
 - [x] All major repositories analyzed (OpenManus, LangGraph, CrewAI, AutoGPT)
