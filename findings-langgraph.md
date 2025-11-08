@@ -4,6 +4,7 @@
 **Organization**: LangChain AI
 **Documentation**: https://docs.langchain.com/oss/python/langgraph/
 **Type**: Framework for building resilient language agents as graphs
+**Last Updated**: 2025-11-08 (Enhanced with multi-agent patterns and 2025 production case studies)
 
 ## Overview
 
@@ -385,6 +386,356 @@ graph.draw_mermaid_png()
 2. **Complexity**: Advanced patterns (orchestrator-worker) have steep learning
 3. **Debugging**: Distributed execution can be challenging to trace
 4. **Overhead**: Framework abstraction adds some performance cost
+
+---
+
+## Multi-Agent Systems (2025 Update)
+
+### Three Core Multi-Agent Architectures
+
+LangGraph supports three distinct multi-agent patterns, each optimized for different use cases:
+
+#### 1. Multi-Agent Collaboration (Shared Scratchpad)
+
+**Pattern**: All agents work on shared message history
+
+**When to Use**:
+- Debates and talkshows
+- Collaborative brainstorming
+- Peer review scenarios
+- Small teams (2-4 agents)
+
+**Characteristics**:
+- ✅ Full transparency: All agents see all work
+- ✅ Natural for discussions
+- ⚠️ Context window grows quickly
+- ⚠️ Agents may see irrelevant information
+
+**Example Architecture**:
+```python
+class CollaborativeState(MessagesState):
+    current_speaker: str
+    topic: str
+
+# All agents see same message history
+def agent_a(state):
+    return {"messages": [AIMessage(...)]}
+
+def agent_b(state):
+    return {"messages": [AIMessage(...)]}  # Sees agent_a's messages
+```
+
+#### 2. Supervisor Pattern (Hierarchical Control)
+
+**Pattern**: Central supervisor coordinates specialized agents with isolated scratchpads
+
+**Library**: `langgraph-supervisor` (2025)
+
+**When to Use**:
+- Complex workflows with clear stages
+- Quality control needed
+- Medium-sized teams (3-7 agents)
+
+**Characteristics**:
+- ✅ Clear hierarchy and responsibility
+- ✅ Agents stay focused (filtered context)
+- ✅ Supervisor handles all routing
+- ⚠️ Supervisor is single point of failure
+- ⚠️ Can become bottleneck
+
+**Example Architecture**:
+```python
+from langgraph_supervisor import create_supervisor
+
+supervisor = create_supervisor(
+    agents=[research_agent, analyst_agent, writer_agent],
+    model="gpt-4o"
+)
+```
+
+#### 3. Swarm/Network Pattern (Peer-to-Peer)
+
+**Pattern**: Agents communicate directly with each other (many-to-many)
+
+**Library**: `langgraph-swarm` (2025)
+
+**When to Use**:
+- Dynamic, unpredictable workflows
+- Highly parallel tasks
+- Large teams (5+ agents)
+
+**Characteristics**:
+- ✅ No single point of failure
+- ✅ Maximum flexibility
+- ✅ Best performance (benchmarks)
+- ⚠️ Harder to debug
+- ⚠️ Requires termination logic
+
+**Example Architecture**:
+```python
+from langgraph.types import Command
+
+def agent(state) -> Command[Literal["agent_b", "agent_c", END]]:
+    # Agent decides next agent
+    return Command(
+        goto="agent_b" if condition else END,
+        update={"messages": [...]}
+    )
+```
+
+### Agent Communication: Handoffs and Command
+
+#### Handoffs (2025 Feature)
+
+**Prebuilt Handoff Tools**:
+```python
+from langgraph_supervisor import create_handoff_tool
+
+handoff_to_analyst = create_handoff_tool(
+    agent_name="analyst",
+    description="Hand off when data needs analysis",
+    include_messages=True  # Pass full history (default)
+)
+```
+
+**Custom Handoffs**:
+```python
+@tool
+def custom_handoff(instructions: str):
+    """Custom handoff with filtered context"""
+    return {
+        "target": "analyst",
+        "context": summarize(state.messages),  # Filter context
+        "instructions": instructions
+    }
+```
+
+#### Command Tool (New in 2025)
+
+**Revolutionary feature** enabling dynamic routing directly from agents:
+
+```python
+def agent(state: MessagesState) -> Command[Literal["next_agent", END]]:
+    # Process
+    response = llm.invoke(state.messages)
+
+    # Dynamically decide next step
+    if needs_more_work:
+        return Command(
+            goto="next_agent",
+            update={"messages": [response]}
+        )
+    else:
+        return Command(
+            goto=END,
+            update={"messages": [response]}
+        )
+```
+
+**Benefits over traditional edges**:
+- ✅ Less boilerplate
+- ✅ Agents control own flow
+- ✅ Supports hierarchical jumps
+- ✅ Type-safe routing
+
+### When to Use Multi-Agent vs Single Agent
+
+#### Benchmarking Results (LangChain 2025)
+
+**Key Finding**: Single agents degrade significantly with 2+ distractor domains
+
+| Architecture | Performance (2+ Domains) | Token Efficiency | Maintainability |
+|--------------|-------------------------|------------------|-----------------|
+| Single Agent | ❌ Sharp decline | ⚠️ Scales linearly | 🔧 Hard to update |
+| Supervisor | ✅ Stable | ✅ Flat usage | ✅ Modular |
+| Swarm | ✅✅ Best | ✅ Flat usage | ✅✅ Most modular |
+
+#### Decision Framework
+
+**Use Single Agent When**:
+- Single domain, <10 tools
+- Only 1 distractor domain
+- Simple, well-defined task
+
+**Use Multi-Agent When**:
+- 2+ distinct domains
+- Heavy parallelization needed (research, data gathering)
+- 15+ tools (reduces tool confusion)
+- Engineering best practices (modularity, testability)
+
+**Avoid Multi-Agent When**:
+- All agents need same context
+- Heavy sequential dependencies (coding tasks)
+- Simple tasks (overhead not justified)
+
+### Production Case Studies
+
+#### LinkedIn: SQL Bot
+- **Architecture**: Supervisor pattern
+- **Agents**: Router → Query Writer → Validator → Fixer → Explainer
+- **Result**: Employees query data independently with permissions
+
+#### Uber: Code Migration
+- **Architecture**: Sequential with loops
+- **Agents**: Analyzer → Generator → Validator → Refiner
+- **Result**: "LangGraph greatly sped up development cycle"
+
+#### Replit: AI Copilot
+- **Architecture**: Swarm with HITL
+- **Agents**: Planning → Coding → Package → File → UI
+- **Result**: Transparent development, users see every action
+
+#### Elastic: Threat Detection
+- **Architecture**: Network/Swarm (parallel monitoring)
+- **Agents**: Detection (parallel) → Analysis → Response → Escalation
+- **Result**: Faster threat response via parallelization
+
+### Multi-Agent Best Practices (2025)
+
+#### 1. State Management
+
+**Keep Minimal and Typed**:
+```python
+# ✅ Good
+class AgentState(TypedDict):
+    messages: Annotated[list[Message], add_messages]
+    current_agent: str
+    iteration: int
+
+# ❌ Bad: Untyped, bloated
+state = {"stuff": [...], "things": {...}}
+```
+
+**Use Reducers Sparingly**:
+```python
+# ✅ Use for accumulation
+messages: Annotated[list[Message], add_messages]
+
+# ✅ Don't use for simple overwrites
+iteration: int  # Just overwrites, no reducer needed
+```
+
+#### 2. Persistence
+
+**Production: Postgres Checkpointer**:
+```python
+from langgraph.checkpoint.postgres import PostgresSaver
+
+checkpointer = PostgresSaver.from_conn_string("postgresql://...")
+graph = graph.compile(checkpointer=checkpointer)
+```
+
+**Benefits**:
+- ✅ Error recovery
+- ✅ Human-in-the-loop
+- ✅ Multi-instance support
+
+#### 3. Context Engineering
+
+**Critical for Reliability**:
+```python
+# ❌ Vague
+agent = Agent(instructions="Help with analysis")
+
+# ✅ Detailed
+agent = Agent(instructions="""
+You are a data analyst specialist.
+
+Your role:
+- Analyze CSV and JSON datasets
+- Identify trends, outliers, correlations
+- Create visualizations
+
+When you receive data:
+1. Inspect schema and data types
+2. Check for missing values
+3. Generate descriptive statistics
+4. Create 2-3 visualizations
+5. Summarize findings
+
+Available tools: pandas, matplotlib, numpy
+Output format: Markdown with visualizations
+""")
+```
+
+**Key**: "Context engineering is critical to making agentic systems work reliably" - Anthropic/LangChain
+
+#### 4. Agent Specialization
+
+**Focused Agents Outperform Generalists**:
+```python
+# ❌ One agent with 15+ tools
+generalist = Agent(tools=[web_search, arxiv, calculator, ...])  # 15 tools
+
+# ✅ Specialized agents
+researcher = Agent(tools=[web_search, arxiv])  # 2 tools
+analyst = Agent(tools=[calculator, data_analysis])  # 2 tools
+coordinator = Agent(tools=[handoff_to_researcher, handoff_to_analyst])  # 2 tools
+```
+
+#### 5. Bounded Cycles
+
+**Prevent Infinite Loops**:
+```python
+def router(state):
+    MAX_ITERATIONS = 20
+
+    if state.iteration >= MAX_ITERATIONS:
+        return END
+
+    if not state.done:
+        return "agent"
+    return END
+
+def agent(state):
+    return {"iteration": state.iteration + 1, ...}
+```
+
+### Common Multi-Agent Pitfalls
+
+#### 1. Too Many Agents
+- **Problem**: >75% of systems with 5+ agents hard to manage
+- **Solution**: Start with 2-3 agents, add only when clear benefit
+
+#### 2. Shared Context Anti-Pattern
+- **Problem**: All agents need identical information
+- **Solution**: Use single agent instead (defeats purpose of multi-agent)
+
+#### 3. Infinite Loops
+- **Problem**: Agents hand off in cycles
+- **Prevention**: Hard iteration limits + progress checks
+
+#### 4. Context Window Bloat
+- **Problem**: Unbounded message history in collaborative pattern
+- **Solution**: Implement summarization at ~50 messages
+
+#### 5. Ignoring Benchmarks
+- **Problem**: Adding agents without measuring impact
+- **Solution**: Always benchmark single vs multi-agent performance
+
+### Latest Features (2025)
+
+#### 1. Command Tool
+- Dynamic node routing directly from agents
+- Replaces separate routing functions
+- Supports hierarchical jumps
+
+#### 2. Supervisor & Swarm Libraries
+- `langgraph-supervisor`: Pre-built hierarchical pattern
+- `langgraph-swarm`: Pre-built peer-to-peer pattern
+- Reduce boilerplate significantly
+
+#### 3. Enhanced Handoffs
+- Prebuilt `create_handoff_tool()`
+- Context filtering support
+- Custom handoff tools
+
+#### 4. Production Monitoring
+- LangSmith integration for tracing
+- Graph visualization improvements
+- Checkpoint inspection tools
+
+---
 
 ## Implications for Complete Workflow
 
