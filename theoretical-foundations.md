@@ -37,7 +37,7 @@
 - Fever: 58.0% vs 43.1% baseline
 - ALFWorld: 34% vs 0% zero-shot
 
-**Implementation:** System prompts establish pattern; tool calls are "actions"; parse observations for iteration. See patterns-antipatterns.md for examples.
+**Implementation:** System prompts establish pattern; tool calls are "actions"; parse observations for iteration. See patterns-and-antipatterns.md for examples.
 
 ---
 
@@ -513,6 +513,105 @@ Is task complex with multiple distinct subtasks?
 
 ---
 
+### 2025 Survey Papers (New)
+
+15. **Multi-Agent Collaboration Mechanisms: A Survey of LLMs**
+    - Tran, Dao, Nguyen et al., January 2025
+    - arXiv:2501.06322
+    - Five-dimensional framework: actors, types, structures, strategies, protocols
+    - https://arxiv.org/abs/2501.06322
+
+16. **Agentic AI: A Comprehensive Survey of Architectures, Applications, and Future Directions**
+    - October 2025
+    - arXiv:2510.25445
+    - Dual-paradigm framework (Symbolic vs Neural)
+    - https://arxiv.org/abs/2510.25445
+
+17. **A Survey on LLM-based Multi-Agent System: Recent Advances and New Frontiers**
+    - December 2024
+    - arXiv:2412.17481
+    - Applications: complex tasks, simulations, evaluations
+    - https://arxiv.org/abs/2412.17481
+
+18. **Survey on Evaluation of LLM-based Agents**
+    - March 2025
+    - arXiv:2503.16416
+    - First comprehensive evaluation methodology survey
+    - https://arxiv.org/abs/2503.16416
+
+19. **LLM-Based Agents for Tool Learning: A Survey**
+    - Springer Data Science and Engineering, June 2025
+    - "Three Ws" framework: Whether, Which, How
+    - https://link.springer.com/article/10.1007/s41019-025-00296-9
+
+---
+
+### 2025 Reasoning Research (New)
+
+20. **Is Chain-of-Thought Reasoning of LLMs a Mirage?**
+    - August 2025
+    - arXiv:2508.01191
+    - CoT fails outside training distribution
+    - https://arxiv.org/abs/2508.01191
+
+21. **Reason from Future: Reverse Thought Chain Enhances LLM Reasoning**
+    - June 2025
+    - arXiv:2506.03673
+    - Bidirectional reasoning paradigm
+    - https://arxiv.org/abs/2506.03673
+
+22. **Language Agent Tree Search (LATS)**
+    - arXiv:2310.04406
+    - Unifies reasoning, acting, planning with MCTS
+    - https://arxiv.org/abs/2310.04406
+
+---
+
+### 2025 Memory Research (New)
+
+23. **A Survey on the Memory Mechanism of Large Language Model based Agents**
+    - April 2024
+    - arXiv:2404.13501
+    - Memory types and architectures
+    - https://arxiv.org/abs/2404.13501
+
+24. **How Memory Management Impacts LLM Agents**
+    - May 2025
+    - arXiv:2505.16067
+    - Experience-following behavior discovery
+    - https://arxiv.org/abs/2505.16067
+
+---
+
+### 2025 Security Research (New)
+
+25. **Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions**
+    - March 2025
+    - arXiv:2503.23278
+    - MCP security analysis
+    - https://arxiv.org/abs/2503.23278
+
+26. **OWASP Top 10 for LLM Applications 2025**
+    - OWASP Foundation, 2025
+    - Prompt injection #1 risk (89.6% attack success)
+    - https://genai.owasp.org/
+
+---
+
+### Benchmarks (New)
+
+27. **AgentBench: Evaluating LLMs as Agents**
+    - arXiv:2308.03688
+    - 8-environment multi-domain benchmark
+    - https://arxiv.org/abs/2308.03688
+
+28. **Berkeley Function Calling Leaderboard (BFCL) V4**
+    - ICML 2025
+    - Function calling accuracy evaluation
+    - https://gorilla.cs.berkeley.edu/leaderboard.html
+
+---
+
 ### Documentation
 
 15. **Prompt Engineering Overview**
@@ -582,4 +681,4 @@ Is task complex with multiple distinct subtasks?
 **Theoretical Foundation:**
 Match approach to problem complexity while managing API costs and latency. The research demonstrates clear evolution from simple prompting to sophisticated multi-agent architectures—choose based on task characteristics, not novelty.
 
-**For implementation examples:** See patterns-antipatterns.md and production-cookbook.md
+**For implementation examples:** See patterns-and-antipatterns.md and agentic-systems-cookbook.md

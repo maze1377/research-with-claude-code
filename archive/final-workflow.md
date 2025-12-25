@@ -1805,6 +1805,8 @@ class CostManager:
 
 ### Security and Permissions
 
+**Multi-Layer Security Framework (See: agent-safety-security-2025.md for complete implementation)**
+
 ```python
 class SecurityManager:
     def validate_permissions(self, agent, tool, user):
@@ -1819,7 +1821,52 @@ class SecurityManager:
         # Rate limiting per user
         if self.rate_limiter.is_exceeded(user, tool):
             raise RateLimitExceededError(f"Rate limit exceeded for {tool}")
+
+    def detect_prompt_injection(self, user_input):
+        """Multi-layer prompt injection detection"""
+        # Pattern matching for known attacks
+        injection_patterns = [
+            r'ignore\s+(previous|above)\s+instructions',
+            r'forget\s+(everything|all)',
+            r'act\s+as\s+(if\s+you\s+are|a)',
+            r'<\|im_start\|>',  # Token smuggling
+        ]
+        for pattern in injection_patterns:
+            if re.search(pattern, user_input, re.IGNORECASE):
+                raise SecurityViolation("Prompt injection detected")
+
+        # Check for encoding attacks (base64, hex)
+        if re.search(r'[A-Za-z0-9+/]{50,}={0,2}', user_input):
+            raise SecurityViolation("Possible encoding attack")
+
+        return user_input
+
+    def filter_output(self, agent_output):
+        """Filter output for PII and credentials"""
+        # Redact emails, SSNs, credit cards, API keys
+        filtered = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+                         '[EMAIL REDACTED]', agent_output)
+        filtered = re.sub(r'\b\d{3}-\d{2}-\d{4}\b', '[SSN REDACTED]', filtered)
+        filtered = re.sub(r'api[_-]?key["\s:=]+[A-Za-z0-9_\-]{20,}',
+                         '[API_KEY REDACTED]', filtered, flags=re.IGNORECASE)
+        return filtered
 ```
+
+**Security Checklist for Production:**
+- [ ] Input validation with prompt injection detection
+- [ ] Output filtering for PII and credentials
+- [ ] Tool sandboxing (Docker/VM/WASM)
+- [ ] Rate limiting per user/endpoint
+- [ ] Human-in-the-loop for high-risk actions
+- [ ] Comprehensive audit logging
+- [ ] Incident response procedures
+- [ ] Compliance checks (EU AI Act, GDPR, OWASP)
+
+**Risk-Based Approval Framework:**
+- LOW (read operations) → Auto-approve
+- MEDIUM (write, API calls) → Require single approval
+- HIGH (delete, code execution) → Require approval with logging
+- CRITICAL (financial, destructive) → Block by default or multi-party approval
 
 ### Audit Trail
 

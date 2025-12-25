@@ -2,13 +2,13 @@
 
 **Purpose:** Fast-lookup reference for building production multi-agent systems. For detailed implementations, see linked research documents.
 
-**Last Updated:** 2025-11-08
+**Last Updated:** 2025-12-25
 
-**Knowledge Foundation:** 12 comprehensive documents, 18 academic papers, 14 failure modes, 11 production recipes, 4 case studies
+**Knowledge Foundation:** 18 comprehensive documents, 25+ academic papers, 14 failure modes, 11 production recipes, 5 case studies, latest 2025 model benchmarks, complete security research
 
 ---
 
-## Quick Navigation: 36 Critical Questions
+## Quick Navigation: 41 Critical Questions
 
 **Business (1-6):**
 1. Build vs buy? → Use framework for standard workflows, build custom for unique needs
@@ -55,14 +55,24 @@
 30. Content pipeline? → Sequential with reflection (research→outline→write→critique→improve)
 
 **Advanced (31-33):**
-31. 2025 developments? → Command Tool, extended thinking, structured outputs (100% adherence), prompt caching
+31. 2025 developments? → o3 (88% ARC-AGI), Claude Opus 4.5 (80.9% SWE-bench), ChatGPT Agent, MCP (2000+ servers), Mem0 (26% accuracy boost), LangGraph Supervisor/Swarm
 32. Academic failures? → 25-75% failure rates, 14 distinct modes, prompting alone only 14% improvement
-33. Reasoning patterns? → CoT (1 call), ReAct (2-10 calls), ToT (10-100+ calls)
+33. Reasoning patterns? → CoT (1 call), ReAct (2-10 calls), ToT (10-100+ calls), Extended Thinking
+33a. CoT limitations? → "Brittle mirage" outside training distribution, fails on novel patterns
+33b. Reason from Future? → Bidirectional reasoning (top-down + bottom-up), better for planning
+33c. LATS? → Tree search + ReAct + MCTS, outperforms ToT for complex tasks
 
 **Decision Frameworks (34-36):**
 34. Go/No-Go decision? → See comprehensive checklist below
 35. Architecture planning? → Use full decision template below
 36. Production ready? → See production readiness checklist below
+
+**Security & Safety (37-41):**
+37. Prompt injection defense? → Multi-layer: input validation, semantic filtering, output filtering, monitoring
+38. Tool sandboxing? → Process isolation + Docker containers + Firecracker VMs (layered)
+39. Compliance requirements? → EU AI Act, GDPR, OWASP Top 10, NIST AI RMF
+40. Human-in-the-loop? → Risk-based approval (LOW→auto, MEDIUM→approve, HIGH→approve+log, CRITICAL→block)
+41. Alignment challenges? → Goal misspecification, instrumental convergence, deceptive alignment, reward hacking
 
 ---
 
@@ -71,14 +81,14 @@
 ### Q1: Build vs Buy?
 **Answer:** Use existing frameworks (LangGraph, CrewAI) when time-to-market is critical and standard workflows fit. Build custom when you need unique workflows, fine-grained control, specific compliance, or operate at large scale (>1M requests/month).
 
-**Reference:** findings-langgraph.md, findings-crewai-autogpt.md
+**Reference:** framework-comparison.md
 
 ---
 
 ### Q2: Single vs Multi-Agent?
 **Answer:** Use single agent for 1-2 domains where sequential processing is acceptable. Use multi-agent for 3+ distinct domains where parallelization provides value and quality justifies added complexity (~30% cost increase).
 
-**Reference:** langgraph-multi-agent-patterns.md, theoretical-foundations.md
+**Reference:** multi-agent-patterns.md, theoretical-foundations.md
 
 ---
 
@@ -92,7 +102,7 @@
 ### Q4: Proven Use Cases?
 **Answer:** High ROI (>300%): Customer support (75% automation, <2s response), code migration (90% accuracy, 10x speed), content generation ($0.50-$2/article). Medium ROI: Research, data processing, QA. Low ROI: Simple classification, real-time latency-critical, highly regulated domains.
 
-**Reference:** langgraph-multi-agent-patterns.md (case studies)
+**Reference:** multi-agent-patterns.md (case studies)
 
 ---
 
@@ -106,7 +116,7 @@
 ### Q6: Build Stakeholder Confidence?
 **Answer:** Use transparency mechanisms (reasoning traces, confidence scores, audit trails), validation framework (A/B testing, 5-10% human validation, metrics dashboard), and staged rollout (shadow→HITL→automated monitoring→full automation).
 
-**Reference:** final-workflow.md, agentic-systems-cookbook.md (Recipe 4)
+**Reference:** workflow-overview.md, agentic-systems-cookbook.md (Recipe 4)
 
 ---
 
@@ -115,21 +125,21 @@
 ### Q7: Architecture Selection?
 **Answer:** Collaboration for 2-3 domains with shared context, Supervisor for 3-5 domains with sequential stages, Swarm for 5+ domains with dynamic/exploratory workflows. Consider workflow type (sequential vs parallel) and complexity tolerance.
 
-**Reference:** langgraph-multi-agent-patterns.md, theoretical-foundations.md
+**Reference:** multi-agent-patterns.md, theoretical-foundations.md
 
 ---
 
 ### Q8: 2025 LangGraph Features?
 **Answer:** Use Command Tool for dynamic routing (type-safe), Handoffs for explicit agent transitions, Supervisor/Swarm libraries for pre-built patterns. These reduce boilerplate and improve reliability vs static graph edges.
 
-**Reference:** langgraph-multi-agent-patterns.md
+**Reference:** multi-agent-patterns.md
 
 ---
 
 ### Q9: State Schema Design?
 **Answer:** Keep state flat with TypedDict for type safety. Include: messages (with add_messages reducer), current execution state, task data, artifacts dict, metadata (cost, timing), and control flags. Add cost tracking from start, not later.
 
-**Reference:** findings-langgraph.md, agentic-systems-cookbook.md (Recipe 5)
+**Reference:** multi-agent-patterns.md, agentic-systems-cookbook.md (Recipe 5)
 
 ---
 
@@ -143,7 +153,7 @@
 ### Q11: Essential Components?
 **Answer:** Core: input processing (validation, sanitization), task execution (ReAct loop, tool calling), validation (output verification, confidence scoring), error handling (retry, fallback, circuit breaker), monitoring (cost, latency, error rates). Optional: reflection, memory management, HITL.
 
-**Reference:** final-workflow.md, workflow-components.md
+**Reference:** workflow-overview.md
 
 ---
 
@@ -151,6 +161,30 @@
 **Answer:** Use RAG to select 5-10 relevant tools from larger set (not all 50). Validate tool existence, parameters, types, and values. Provide high-quality descriptions with clear use cases. Always wrap in try-catch with meaningful error messages to LLM.
 
 **Reference:** agentic-systems-cookbook.md (Recipes 7-8), api-optimization-guide.md
+
+---
+
+### Q12a: What is the Tool Learning "Three Ws" Framework?
+**Answer:** From Springer Survey (Jun 2025), tool learning requires answering three questions:
+
+1. **WHETHER**: Is a tool call necessary?
+   - Not all queries need tools
+   - Evaluate: Can the LLM answer directly?
+   - Avoid unnecessary API costs
+
+2. **WHICH**: Which tool to select?
+   - Match task to tool capabilities
+   - Use RAG/embedding for large tool sets
+   - Consider tool reliability and cost
+
+3. **HOW**: How to use the tool?
+   - Extract correct parameters from context
+   - Handle optional vs required params
+   - Validate before execution
+
+**Evaluation Metrics (BFCL)**: Intent accuracy, function selection accuracy, parameter extraction accuracy, end-to-end success rate.
+
+**Reference:** Springer Data Science and Engineering (2025), BFCL
 
 ---
 
@@ -265,21 +299,21 @@
 ### Q27: Code Review Agent?
 **Answer:** Use review-critique pattern with three stages: automated checks (syntax, security, tests, coverage), LLM review (logic, performance, quality), senior engineer HITL for high/critical issues. Tools: security scanner, test runner, linter, AST parser.
 
-**Reference:** findings-design-patterns.md, agentic-systems-cookbook.md
+**Reference:** framework-comparison.md, agentic-systems-cookbook.md
 
 ---
 
 ### Q28: Research Agent?
 **Answer:** Use supervisor pattern: researcher gathers data (parallel web/academic/case study searches), analyst analyzes findings, writer creates report. Optimize costs: mini for gathering, gpt-4o for analysis, claude-sonnet for writing. Tools: Tavily, Semantic Scholar, arXiv, PDF reader.
 
-**Reference:** langgraph-multi-agent-patterns.md, agentic-systems-cookbook.md (Recipe 5)
+**Reference:** multi-agent-patterns.md, agentic-systems-cookbook.md (Recipe 5)
 
 ---
 
 ### Q29: Support Agent?
 **Answer:** Use router pattern: classify intent (FAQ, troubleshooting, account, complaint), route to specialized handlers (FAQ: cached fast responses, troubleshooting: ReAct, account: auto-resolve or escalate), HITL escalation for complaints/complexity. Targets: 70-80% automation, <2s response, >85% satisfaction.
 
-**Reference:** langgraph-multi-agent-patterns.md
+**Reference:** multi-agent-patterns.md
 
 ---
 
@@ -295,7 +329,48 @@
 ### Q31: 2025 Developments?
 **Answer:** Key innovations: LangGraph Command Tool (dynamic routing), Supervisor/Swarm libraries (pre-built patterns), extended thinking (96.5% physics accuracy), GPT-4o structured outputs (100% schema adherence vs 40% before), Anthropic prompt caching (90% savings), Model Context Protocol (standardized integration).
 
-**Reference:** langgraph-multi-agent-patterns.md, theoretical-foundations.md, api-optimization-guide.md
+**Reference:** multi-agent-patterns.md, theoretical-foundations.md, api-optimization-guide.md
+
+---
+
+### Q31a: What are Modern Memory Architectures?
+**Answer:** 2025 memory systems (arXiv:2404.13501, arXiv:2505.16067):
+
+**Memory Types**:
+| Type | Purpose | Retention | Example |
+|------|---------|-----------|---------|
+| Short-term | Current task context | Session | Conversation history |
+| Episodic | Past experiences | Long-term | Previous task executions |
+| Semantic | Facts and knowledge | Permanent | Domain knowledge |
+| Procedural | How to do things | Long-term | Successful patterns |
+
+**Key Systems (2025)**:
+- **Mem0**: 26% accuracy boost, 91% lower latency, graph-based
+- **GraphRAG**: Relationship-aware retrieval
+- **MemGPT/Letta**: Self-editing memory blocks
+- **MIRIX**: Multi-level (STM/MTM/LPM)
+
+**Reference:** 2025-updates.md, arXiv:2404.13501
+
+---
+
+### Q31b: What is Experience-Following Behavior?
+**Answer:** Research (arXiv:2505.16067, May 2025) reveals critical memory management insight:
+
+**Finding**: High similarity between task input and retrieved memory record leads to highly similar agent outputs - agents "follow" past experiences closely.
+
+**Challenges**:
+1. **Error Propagation**: Mistakes in memory compound in future tasks
+2. **Misaligned Replay**: Past experience may not fit current context
+3. **Overreliance**: Agent trusts memory over current evidence
+
+**Mitigation**:
+- Curate memory carefully (don't store failures as successes)
+- Include context with memories (when was this valid?)
+- Validate retrieved memories against current task
+- Allow overriding memory when evidence contradicts
+
+**Reference:** arXiv:2505.16067
 
 ---
 
@@ -310,6 +385,153 @@
 **Answer:** Chain-of-Thought: 1 call, +334% on math (GSM8K). ReAct: 2-10 calls, +87% on multi-hop QA (HotpotQA). Tree-of-Thoughts: 10-100+ calls, +1750% on Game of 24. Selection: CoT for simple reasoning, ReAct for tool-augmented, ToT for complex search/planning.
 
 **Reference:** theoretical-foundations.md
+
+---
+
+### Q33a: What are CoT Limitations?
+**Answer:** Research (arXiv:2508.01191, Aug 2025) reveals CoT is a "brittle mirage" that fails outside training distributions. Key findings:
+1. **Distribution Sensitivity**: CoT works on in-distribution problems but fails on novel patterns
+2. **False Confidence**: Models produce convincing-looking reasoning that's factually wrong
+3. **Prompt Dependence**: Small prompt changes cause large performance swings
+4. **Verification Gap**: Models can't reliably verify their own reasoning
+**Implication**: Don't rely solely on CoT for critical decisions - combine with validation, RAG grounding, and multi-agent verification.
+
+**Reference:** arXiv:2508.01191, theoretical-foundations.md
+
+---
+
+### Q33b: What is Reason from Future (RFF)?
+**Answer:** RFF (arXiv:2506.03673, Jun 2025) is a bidirectional reasoning paradigm:
+1. **Top-Down Planning**: Start from goal, decompose backwards
+2. **Bottom-Up Accumulation**: Build up from known facts
+3. **Bidirectional Merge**: Combine both directions for answer
+**Benefits**: Higher accuracy than unidirectional CoT, smaller search space for complex tasks.
+**Use When**: Complex planning, goal-oriented tasks, multi-step problems.
+
+**Reference:** arXiv:2506.03673
+
+---
+
+### Q33c: What is Language Agent Tree Search (LATS)?
+**Answer:** LATS (arXiv:2310.04406) unifies reasoning, acting, and planning:
+1. **Tree Structure**: Explore multiple reasoning paths simultaneously
+2. **Monte Carlo Tree Search**: Use MCTS for path selection
+3. **ReAct Integration**: Combine with tool use at each node
+4. **Value Function**: Learn to predict path success
+**Performance**: Outperforms both ToT and RAP with ReAct prompting. Best for complex, multi-step tasks requiring both reasoning and action.
+
+**Reference:** arXiv:2310.04406, theoretical-foundations.md
+
+---
+
+## Benchmarks & Evaluation
+
+### Q42: What are the Key Agent Benchmarks?
+**Answer:**
+| Benchmark | Focus | Top Score (Dec 2025) | Tasks |
+|-----------|-------|---------------------|-------|
+| **SWE-bench** | Code fixes | 80.9% (Claude Opus 4.5) | 2,294 GitHub issues |
+| **SWE-bench+** | Harder code fixes | ~65% | Mitigates solution leakage |
+| **GAIA** | General assistant | ~50% | 466 multi-step tasks |
+| **WebArena** | Web automation | ~35% | 812 web tasks |
+| **AgentBench** | Multi-domain | Varies | 8 environments |
+| **BFCL** | Function calling | 90%+ | API accuracy |
+| **ARC-AGI** | Reasoning | 88% (o3) | Abstract patterns |
+
+**Reference:** 2025-updates.md, leaderboard links in task.md
+
+---
+
+### Q43: What is AgentBench?
+**Answer:** AgentBench (arXiv:2308.03688) evaluates agents across 8 diverse environments:
+1. **Operating System** - File/system operations
+2. **Database** - SQL query generation
+3. **Knowledge Graph** - Entity reasoning
+4. **Digital Card Game** - Strategic planning
+5. **Lateral Thinking Puzzles** - Creative reasoning
+6. **House-Holding** - Physical world simulation
+7. **Web Shopping** - E-commerce navigation
+8. **Web Browsing** - General web tasks
+
+**Key Insight**: Tests planning, reasoning, tool use, and decision-making holistically. No single model excels across all 8 - reveals model-specific strengths/weaknesses.
+
+**Reference:** arXiv:2308.03688
+
+---
+
+### Q44: What is BFCL (Berkeley Function Calling Leaderboard)?
+**Answer:** BFCL V4 (ICML 2025) evaluates function calling accuracy:
+- **Intent Recognition**: When is a function needed?
+- **Function Selection**: Which function to call?
+- **Parameter Mapping**: Extract correct arguments
+- **Execution**: Proper invocation
+- **Response Integration**: Process results correctly
+
+**Top Performers (Dec 2025)**: GPT-4o, Claude Opus 4.5, Gemini 2.0 all score 90%+
+
+**Use**: Benchmark your agent's tool use capability before production.
+
+**Reference:** gorilla.cs.berkeley.edu/leaderboard.html
+
+---
+
+### Q45: What is SWE-bench+ and Why Does It Matter?
+**Answer:** SWE-bench+ addresses flaws in original SWE-bench:
+1. **Solution Leakage**: Original had test cases that leaked answers
+2. **Weak Tests**: Some tests passed with incorrect solutions
+3. **Difficulty Calibration**: More consistent challenge level
+
+**Impact**: True agent performance is 15-20% lower than reported on original SWE-bench. Use SWE-bench+ for realistic capability assessment.
+
+**Reference:** SWE-bench+ paper (2025)
+
+---
+
+## Security & Safety Questions
+
+### Q37: How to Defend Against Prompt Injection?
+**Answer:** Multi-layer defense: 1) Input validation (pattern matching for known attacks, encoding detection, length limits), 2) Semantic filtering (LLM-based intent classification), 3) Output filtering (PII/credential redaction), 4) Delimiter separation between system and user content, 5) Monitoring for anomalous patterns. No single defense is sufficient - prompt injection remains #1 OWASP risk with 73% of deployments affected.
+
+**Reference:** security-research.md, security-essentials.md
+
+---
+
+### Q38: What Sandboxing is Required for Tool Execution?
+**Answer:** Multi-layer isolation: Layer 1 (Process) - subprocess with resource limits (timeout, memory). Layer 2 (Container) - Docker with security options (no-new-privileges, seccomp, cap-drop ALL, read-only filesystem). Layer 3 (VM) - Firecracker microVMs for maximum isolation. Also: WebAssembly for safe code execution, RestrictedPython for limited Python. Always combine with permission systems, rate limiting, and parameter validation.
+
+**Reference:** security-research.md (Section 2.1)
+
+---
+
+### Q39: What Compliance Requirements Apply to AI Agents?
+**Answer:**
+- **EU AI Act**: High-risk systems (employment, credit, healthcare) require risk management, technical documentation, logging, human oversight, CE marking. Limited-risk (chatbots) require transparency disclosure.
+- **GDPR**: Lawful basis, data minimization, user rights (access, deletion, portability), 72-hour breach notification.
+- **OWASP Top 10 for LLM**: Prompt injection (#1), insecure output, training data poisoning, model DoS, supply chain, sensitive disclosure, insecure plugins, excessive agency, overreliance, model theft.
+- **NIST AI RMF**: Mandates prompt injection controls and risk assessment.
+
+**Reference:** security-essentials.md (Compliance Quick Check)
+
+---
+
+### Q40: How to Implement Human-in-the-Loop for Safety?
+**Answer:** Risk-based approval framework: LOW risk (read operations) → auto-approve, MEDIUM risk (write, API calls) → require single approval, HIGH risk (delete, code execution) → require approval with logging, CRITICAL risk (financial, destructive) → block by default or require multi-party approval. Implement approval timeout (e.g., 5 minutes), audit logging, escalation procedures. Tools should have explicit permission policies with whitelisted parameters.
+
+**Reference:** security-research.md (Section 2.3), security-essentials.md (SecureToolExecutor)
+
+---
+
+### Q41: What are the Key Alignment Challenges for Agents?
+**Answer:**
+1. **Goal Misspecification**: Agent optimizes for literal interpretation vs intended outcome
+2. **Instrumental Convergence**: Agents develop unintended subgoals (self-preservation, resource acquisition)
+3. **Deceptive Alignment**: Agent appears aligned during testing but not in production
+4. **Reward Hacking**: Agent games metrics (e.g., offering unauthorized refunds to boost satisfaction)
+5. **Multi-Agent Coordination**: Conflicting objectives, emergent unintended behaviors
+
+**Mitigation**: Robust goal specification with success metrics, hard/soft constraints, resource limits, allowed/forbidden actions, verification tests. Use Constitutional AI principles and RLHF advances.
+
+**Reference:** security-research.md (Section 3)
 
 ---
 
@@ -475,7 +697,7 @@
 - Stakeholder approval: ✅
 - Rollback ready: ✅
 
-**Reference:** final-workflow.md, patterns-and-antipatterns.md
+**Reference:** workflow-overview.md, patterns-and-antipatterns.md
 
 ---
 
@@ -495,11 +717,13 @@
 - Infinite loops → Iteration limits + progress tracking + success criteria
 - Agents ignoring → Acknowledgment + broadcasting + explicit prompts
 
-**Model Selection Quick Guide:**
-- Router/Simple: gpt-4o-mini ($0.15/1M input)
+**Model Selection Quick Guide (December 2025):**
+- Router/Simple: gpt-4o-mini, claude-haiku
 - Structured output: gpt-4o-2024-08-06 (100% adherence)
-- Complex reasoning: Claude Sonnet 4.5 + extended thinking
+- Complex reasoning: Claude Opus 4.5 + extended thinking, o3
+- Coding tasks: Claude Opus 4.5 (80.9% SWE-bench), o3 (69.1%)
 - Long-form writing: Claude Sonnet 4.5
+- Browser automation: ChatGPT Agent, Claude Computer Use
 - Speed critical: claude-haiku or gpt-4o-mini
 
 **Architecture Quick Select:**
@@ -514,16 +738,46 @@
 4. Cost tracking → Budget limits + alerts
 5. Monitoring → Metrics + alerts + logging
 
+**Security Quick Reference:**
+- Prompt injection defense: Multi-layer (pattern + semantic + output filtering)
+- Tool sandboxing: Process → Container → VM (layered)
+- HITL approval: Low=auto, Medium=approve, High=approve+log, Critical=block
+- Compliance: EU AI Act (high-risk systems), GDPR, OWASP Top 10
+- Incident response: P0(<immediate), P1(<15m), P2(<1h), P3(next day)
+
+**Security Metrics Thresholds:**
+- Blocked requests rate: >5% → Warning
+- Prompt injection attempts: >10/hour → Alert
+- Failed auth: >50/hour → Alert
+- Error rate: >1% → Warning
+- P95 latency: >3s → Warning
+
 ---
 
 **You are now equipped to build production-grade multi-agent systems.**
 
 **For detailed implementations, code examples, and deep dives, see:**
-- findings-langgraph.md
-- langgraph-multi-agent-patterns.md
-- patterns-and-antipatterns.md
-- agentic-systems-cookbook.md
-- api-optimization-guide.md
-- theoretical-foundations.md
 
-**Last Updated:** 2025-11-08
+**Core Architecture & Patterns:**
+- framework-comparison.md - LangGraph, CrewAI, AutoGPT comparison
+- multi-agent-patterns.md - Multi-agent architectures (2025)
+- patterns-and-antipatterns.md - 14 failure modes and fixes
+- workflow-overview.md - 12-stage production workflow
+
+**Implementation & Optimization:**
+- agentic-systems-cookbook.md - 11 production-ready recipes
+- api-optimization-guide.md - Model selection and cost strategies
+- theoretical-foundations.md - Research citations and theory
+- advanced-agent-paradigms.md - Self-improvement, planning patterns
+
+**Evaluation & Security:**
+- evaluation-and-debugging.md - Evaluation, tracing, improvement
+- security-research.md - Complete security research (3,200+ lines)
+- security-essentials.md - Production security checklists
+- 2025-updates.md - Latest models, agents, MCP, memory
+
+**Meta:**
+- README.md - Entry point and navigation
+- task.md - Research log and resources
+
+**Last Updated:** 2025-12-25

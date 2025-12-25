@@ -5,7 +5,7 @@
 
 **Last Updated:** 2025-11-08
 
-**Note:** Detailed code examples available in `production-cookbook.md`
+**Note:** Detailed code examples available in `agentic-systems-cookbook.md`
 
 ---
 
@@ -96,7 +96,7 @@ agents = {
 - Model can still hallucinate values (validate content separately)
 - Not all JSON schemas supported (check documentation)
 
-**Code Example:** See `production-cookbook.md` → Structured Outputs section
+**Code Example:** See `agentic-systems-cookbook.md` → Structured Outputs section
 
 ### 2. Function Calling Optimization
 
@@ -117,7 +117,7 @@ agents = {
 - Examples: Edge cases and typical usage
 ```
 
-**Code Example:** See `production-cookbook.md` → Function Calling section
+**Code Example:** See `agentic-systems-cookbook.md` → Function Calling section
 
 ### 3. Parallel Function Calling
 
@@ -139,7 +139,7 @@ agents = {
 - Progressive rendering
 - Improved perceived performance
 
-**Code Example:** See `production-cookbook.md` → Streaming section
+**Code Example:** See `agentic-systems-cookbook.md` → Streaming section
 
 ### 5. Prompt Caching
 
@@ -177,7 +177,7 @@ agents = {
 - Consistent system prompts across conversations
 - Few-shot examples that don't change
 
-**Code Example:** See `production-cookbook.md` → Prompt Caching section
+**Code Example:** See `agentic-systems-cookbook.md` → Prompt Caching section
 
 ### 2. Extended Thinking (Claude 3.7+)
 
@@ -216,7 +216,7 @@ agents = {
 - Format results for LLM consumption (human-readable > raw JSON)
 - Continue with tool_result message
 
-**Code Example:** See `production-cookbook.md` → Tool Use section
+**Code Example:** See `agentic-systems-cookbook.md` → Tool Use section
 
 ### 4. System Prompt Best Practices
 
@@ -494,6 +494,277 @@ High Performance ↑
 
 ---
 
+## Hallucination Reduction (Advanced)
+
+### Strategy 1: Retrieval-Augmented Generation (RAG)
+Ground responses in retrieved facts rather than parametric knowledge.
+
+**Implementation**:
+```
+1. Chunk documents (500-1000 tokens)
+2. Embed and index in vector store
+3. Retrieve top-k relevant chunks
+4. Inject as context: "Based on: {chunks}"
+5. Instruct: "Only use provided information"
+```
+
+**Impact**: 40-60% hallucination reduction
+
+### Strategy 2: Multi-Agent Validation
+Use separate critic agent to verify claims.
+
+**Pattern**:
+```
+Generator → Output → Critic → [Valid/Invalid + Feedback]
+                         ↓
+              If Invalid → Generator (with feedback)
+```
+
+**Key**: Critic has access to ground truth sources
+
+### Strategy 3: Prompt Engineering for Accuracy
+```
+# Effective patterns:
+- "If unsure, say 'I don't know'"
+- "Cite sources for each claim"
+- "Distinguish facts from opinions"
+- "Rate confidence 1-10 for each statement"
+```
+
+### Strategy 4: Fine-Tuning on Curated Data
+When prompting isn't enough:
+- Fine-tune on verified Q&A pairs
+- Use constitutional AI training
+- RLHF on accuracy metrics
+
+### Strategy 5: Multi-Agent Collaborative Filtering (MCF)
+Agents collaboratively filter and verify each other's outputs.
+
+**Pattern**:
+```
+Agent A → Output → Agent B (Filter) → Agent C (Verify) → Final Output
+                        ↓                    ↓
+                   Feedback to A        Feedback to B
+```
+
+**Impact**: 4-8% accuracy improvement over single-agent
+
+### Strategy 6: Adversarial Debate
+Two agents argue opposing positions to find truth.
+
+**Pattern**:
+```
+Generator A (Pro) ←→ Generator B (Con)
+         ↓                  ↓
+         └──→ Judge Agent ←─┘
+                   ↓
+            Final Verdict
+```
+
+**Impact**: 4-6% higher accuracy, 30% fewer factual errors
+
+### Strategy 7: ICE (Iterative Consensus Ensemble)
+Multiple agents iterate until reaching consensus.
+
+**Pattern**:
+```
+Round 1: Agent1, Agent2, Agent3 → [Output1, Output2, Output3]
+         ↓
+Compare outputs → Disagreement?
+         ↓ Yes
+Round 2: Share outputs, re-generate with context
+         ↓
+Repeat until consensus or max rounds
+```
+
+**Impact**: Up to 27% accuracy improvement
+**Note**: Ensemble size saturates at 3-5 agents (diminishing returns beyond)
+
+### Strategy 8: Cross-Validation Voting
+Simple but effective voting across multiple agents.
+
+**Pattern**:
+```
+Query → [Agent1, Agent2, Agent3] → [Response1, Response2, Response3]
+                    ↓
+          Majority voting / Weighted average
+                    ↓
+              Final Response
+```
+
+**Impact**: 40% accuracy boost with 3-5 agents
+**Best for**: Classification, factual questions, structured outputs
+
+---
+
+## Performance & Speed Optimization
+
+### 1. Streaming Responses
+```
+# Start showing output immediately
+for chunk in client.chat.completions.create(stream=True):
+    yield chunk.choices[0].delta.content
+```
+**Benefit**: Perceived latency drops 80%+
+
+### 2. Parallel API Calls
+```
+# Run independent calls concurrently
+import asyncio
+results = await asyncio.gather(
+    call_model(prompt1),
+    call_model(prompt2),
+    call_model(prompt3)
+)
+```
+**Benefit**: 3x faster for independent tasks
+
+### 3. Model Cascading for Speed
+```
+# Fast model first, escalate if needed
+response = fast_model(query)          # gpt-4o-mini: 50ms
+if needs_more_depth(response):
+    response = slow_model(query)      # claude-opus: 500ms
+```
+
+### 4. Response Caching
+```
+# Cache deterministic queries
+cache_key = hash(system_prompt + user_query)
+if cache_key in cache:
+    return cache[cache_key]           # 0ms
+```
+
+### 5. Context Pruning
+- Keep only relevant history (last 5-10 messages)
+- Summarize old context instead of including verbatim
+- Remove redundant system instructions
+
+### 6. M1-Parallel Orchestration (Multi-Agent)
+Optimized parallel agent execution with dependency tracking.
+
+**Pattern**:
+```
+Task Graph Analysis → Identify Independent Tasks
+         ↓
+Parallel Dispatch → [Agent1, Agent2, Agent3] (concurrent)
+         ↓
+Dependency Resolution → Sequential for dependent tasks
+         ↓
+Result Aggregation
+```
+
+**Impact**: 1.8-2.2x speedup over sequential execution
+**Best for**: Multi-agent workflows with independent subtasks
+
+### 7. Agentic Plan Caching
+Cache execution plans for repeated patterns.
+
+**Implementation**:
+```
+1. Hash task pattern + context signature
+2. Check plan cache before planning
+3. If hit: Execute cached plan directly
+4. If miss: Generate plan, cache for future
+5. Invalidate on context/tool changes
+```
+
+**Impact**:
+- 50.31% cost reduction
+- 27.28% latency reduction
+- Works best with stable task patterns
+
+### 8. Speculative Actions
+Pre-compute likely next actions while waiting for user/system.
+
+**Pattern**:
+```
+Current State → Predict likely next actions (top 3)
+         ↓
+Pre-execute in background (low priority)
+         ↓
+User action arrives → Match prediction?
+         ↓ Yes               ↓ No
+Use cached result    Discard, execute fresh
+```
+
+**Impact**: Real-time performance for common workflows
+**Caution**: Increases compute cost; use for high-value paths only
+
+### 9. KV Cache Routing
+Route requests to maximize cache hits across distributed LLM instances.
+
+**Pattern**:
+```
+Request → Hash prefix (system prompt + context)
+         ↓
+Route to instance with matching KV cache
+         ↓
+Higher hit rate → Lower latency + cost
+```
+
+**Impact**: 87% cache hit rate achievable
+**Requires**: Load balancer with cache-aware routing
+
+### 10. DAG-based Task Scheduling (LLMCompiler)
+Use directed acyclic graph for optimal task ordering.
+
+**Pattern**:
+```
+       Task DAG
+         ┌─────┐
+         │  A  │
+         └──┬──┘
+       ┌────┴────┐
+       ↓         ↓
+    ┌─────┐   ┌─────┐
+    │  B  │   │  C  │  ← Execute in parallel
+    └──┬──┘   └──┬──┘
+       └────┬────┘
+            ↓
+         ┌─────┐
+         │  D  │  ← Wait for B, C
+         └─────┘
+```
+
+**Impact**: Optimal parallelization with dependency respect
+**Best for**: Complex multi-step agent workflows
+
+---
+
+## Combined Optimization Strategies
+
+### Production-Ready Configuration
+
+| Optimization | Expected Improvement |
+|--------------|---------------------|
+| Prompt caching | 90% cost reduction on repeated |
+| Model cascading | 40-60% cost reduction |
+| Parallel calls | 2-5x speed improvement |
+| Streaming | 80% perceived latency reduction |
+| RAG grounding | 40-60% hallucination reduction |
+| Multi-agent validation | 85→99% accuracy |
+| Agentic Plan Caching | 50% cost + 27% latency reduction |
+| M1-Parallel Orchestration | 1.8-2.2x speedup |
+| ICE Consensus | 27% accuracy improvement |
+| Cross-Validation Voting | 40% accuracy boost |
+| KV Cache Routing | 87% cache hit rate |
+
+### Recommended Stack
+```
+Layer 1: Cache (Exact + Semantic)
+    ↓
+Layer 2: Router (Classify complexity)
+    ↓
+Layer 3: Model Selection (Cheap → Expensive cascade)
+    ↓
+Layer 4: Execution (Parallel where possible)
+    ↓
+Layer 5: Validation (Critic agent for high-stakes)
+```
+
+---
+
 ## Conclusion
 
 **The Three Pillars of Production API Usage:**
@@ -528,6 +799,6 @@ High Performance ↑
 - Monitor and iterate based on production metrics
 
 **See Also:**
-- `production-cookbook.md` - Complete code examples
+- `agentic-systems-cookbook.md` - Complete code examples
 - `patterns-and-antipatterns.md` - Common pitfalls and solutions
-- `langgraph-research.md` - Multi-agent orchestration patterns
+- `multi-agent-patterns.md` - Multi-agent orchestration patterns
