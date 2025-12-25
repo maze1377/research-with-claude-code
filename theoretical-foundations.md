@@ -3,7 +3,22 @@
 
 **Purpose:** Theoretical foundations for building multi-agent systems using LLM APIs (OpenAI, Anthropic) without developing custom models.
 
-**Last Updated:** 2025-11-08
+**Last Updated:** 2025-12-25
+
+---
+
+## December 2025 Key Research
+
+| Topic | Finding | Source |
+|-------|---------|--------|
+| RLVR | Primary training method for reasoning models (DeepSeek-R1, o3) | arXiv 2025 |
+| CoT Faithfulness | 3 unfaithful cases in 21,272 trajectories (METR) | METR 2025 |
+| Test-Time Compute | 4x efficiency with compute-optimal allocation | arXiv:2408.03314 |
+| LATS | 92.7% HumanEval (SOTA) | ICML 2025 |
+| Multi-Agent Game Theory | Cross-linguistic divergence in strategic behavior | arXiv:2512.07462 |
+| A2A Protocol | 50+ partners, full specification released | Google 2025 |
+| MCP Anniversary | November 2025 spec with tasks, sampling, security | Anthropic |
+| BFCL V4 | Gemini 1.5 Pro: 69.8/100 top score | Berkeley |
 
 ---
 
@@ -55,11 +70,114 @@
 1. **Few-Shot CoT:** Examples with reasoning chains
 2. **Zero-Shot CoT:** "Let's think step by step"
 3. **Self-Consistency CoT:** Multiple paths, majority voting
+4. **Reverse Thought Chain (RFF):** Bidirectional reasoning from goal to start (arXiv:2506.03673)
 
 **Performance Gains:**
 - Arithmetic (GSM8K): 17.9% → 78.5%
 - Commonsense (StrategyQA): 74.0% → 83.8%
 - Symbolic (Last Letter): 37.1% → 58.8%
+
+### 2a. CoT Faithfulness Research (NEW 2025)
+
+**The Faithfulness Paradox:**
+Anthropic 2024 suggested CoT outputs may be "unfaithful" - not representing actual computation.
+
+**METR Counter-Study (August 2025):**
+- Examined 21,272 trajectories
+- Found only **3 cases** of plausible unfaithfulness
+- Faithfulness fluctuates **10x** based on prompting details
+- Instructing to "avoid mentioning clues" paradoxically increased faithfulness
+
+**FUR Framework (arXiv:2502.14829):**
+- Uses machine unlearning to measure step influence
+- Two metrics: ff-hard (whole chain) and ff-soft (individual steps)
+- Correlation with prediction influence: **r = 0.889** (p<0.0001)
+- Key finding: Faithful steps may still be implausible to humans
+
+**Implications:**
+```
+Don't assume reasoning traces = actual process
+BUT: With proper prompting, CoT can be highly informative
+Need: Alignment for both faithful AND plausible reasoning
+```
+
+---
+
+### 2b. Reinforcement Learning with Verifiable Rewards (RLVR) - NEW
+
+**The Dominant 2025 Paradigm for Reasoning Models**
+
+**What is RLVR?**
+- Post-training optimization using deterministic verifiers
+- Execution-based checks (code) or mathematical verification
+- No learned reward models → no reward hacking
+- Foundation of DeepSeek-R1, OpenAI o3, o4-mini
+
+**Key Insight (NeurIPS 2025):**
+RLVR primarily improves **sampling efficiency**, not capability frontier.
+- RLVR models: better at pass@1
+- Base models with majority voting: often better at pass@k (large k)
+- Gains from refined search, not new reasoning abilities
+
+```
+RLVR vs Traditional RLHF:
+
+RLHF:
+    Human preferences → Learned reward model → Policy optimization
+    Risk: Reward model drift, exploitation
+
+RLVR:
+    Verifiable task → Deterministic verifier → Policy optimization
+    Advantage: No reward hacking, perfect signal
+```
+
+**Applicable Domains:**
+- Code generation (execution-based verification)
+- Mathematical proofs (symbolic verification)
+- Logical puzzles (outcome verification)
+- NOT: Open-ended text, creative writing (no verifier)
+
+---
+
+### 2c. Test-Time Compute Scaling Laws (NEW)
+
+**Core Insight (arXiv:2408.03314):**
+Performance scales with test-time compute, not just model size.
+
+**Key Findings:**
+- **4x efficiency** with compute-optimal allocation (vs naive best-of-N)
+- 14x larger model performance achievable with 7x smaller model + compute
+- Optimal allocation is **problem-dependent**
+
+```
+Test-Time Compute Strategies:
+
+1. Best-of-N Sampling
+   Generate N solutions → Select best → Simple but wasteful
+
+2. Majority Voting (Self-Consistency)
+   Generate k chains → Extract answers → Vote → Robust
+
+3. Adaptive Allocation (Optimal)
+   Easy problems → Less compute
+   Hard problems → More compute
+   Result: 4x efficiency gain
+
+4. Configurable Effort (o3-mini)
+   Low/Medium/High reasoning effort
+   Medium = o1 performance, 24% faster
+```
+
+**Relationship to Model Size:**
+```
+Traditional Scaling:
+    Performance ∝ log(Parameters) × log(Training Data)
+
+Test-Time Scaling:
+    Performance ∝ log(Parameters) × log(Test-Time Compute)
+
+Implication: Smaller models + more inference compute can match larger models
+```
 
 ---
 
@@ -84,6 +202,43 @@
 - Mini Crosswords: 60% → 78%
 
 **Cost:** 10-100+ API calls per problem (vs 1 for CoT, 2-10 for ReAct)
+
+### 3a. Language Agent Tree Search (LATS) - Updated
+
+**Paper:** arXiv:2310.04406 (ICML 2025)
+
+**Unifies:** Reasoning + Acting + Planning via Monte Carlo Tree Search
+
+```
+LATS Architecture:
+    ┌─────────────────────────────────────────┐
+    │           MCTS Controller               │
+    │  ┌──────────────────────────────────┐  │
+    │  │  Value Function (LLM-based)      │  │
+    │  │  Self-Reflection (LLM-based)     │  │
+    │  │  External Environment Feedback   │  │
+    │  └──────────────────────────────────┘  │
+    │              ↓                          │
+    │     Tree of Reasoning/Actions          │
+    └─────────────────────────────────────────┘
+```
+
+**Key Innovations:**
+- LLM as value function (no hand-crafted heuristics)
+- Self-reflection on failed attempts
+- Environment integration for grounded feedback
+
+**Performance (ICML 2025):**
+| Benchmark | LATS Score | Previous SOTA |
+|-----------|------------|---------------|
+| HumanEval | **92.7%** pass@1 | ~88% |
+| WebShop | 75.9 avg score | ~72 (tuned) |
+| Crosswords | 85%+ | 78% |
+
+**When to Use:**
+- Complex multi-step problems
+- Exploration/exploitation tradeoff needed
+- Cost is acceptable (10-100x simple prompting)
 
 ---
 
@@ -205,21 +360,92 @@
 
 ---
 
+### 6. Game-Theoretic Analysis (NEW 2025)
+
+**FAIRGAME Framework (arXiv:2512.07462):**
+Evaluates LLM strategic behavior in repeated social dilemmas.
+
+**Key Findings:**
+| Behavior | Description |
+|----------|-------------|
+| **Cross-linguistic divergence** | Same math incentives, different behavior by language |
+| **Incentive-sensitive cooperation** | Adjust strategy based on payoffs |
+| **End-game defection** | Cooperation decreases approaching final round |
+| **Model-dependent variation** | Behavior varies more by model than expected |
+
+**Implications:**
+- LLMs don't have stable "preferences" - context-dependent
+- Linguistic framing as strong as architectural differences
+- Backward induction reasoning (end-game) can be problematic
+
+---
+
+### 7. Emergent Coordination Theory (NEW 2025)
+
+**Information Decomposition Framework:**
+Measures whether multi-agent LLM systems exhibit genuine higher-order structure.
+
+**Study Design:**
+- Multi-agent LLMs playing cooperative games
+- Minimal direct communication
+- Information decomposition of time-delayed mutual information
+
+**Key Finding:**
+```
+Condition         | Temporal Synergy | Differentiation | Complementarity
+------------------|------------------|-----------------|----------------
+Control           | Yes              | No              | No
++ Personas        | Yes              | Yes             | No
++ Personas + ToM  | Yes              | Yes             | YES
+
+ToM = "Theory of Mind" prompts (think about what others are thinking)
+```
+
+**Practical Implication:**
+- Cooperation doesn't emerge naturally from shared objectives
+- Explicit perspective-taking prompts reshape coordination structure
+- Personas + ToM create goal-directed complementarity
+
+---
+
 ## Communication Protocols
 
-### 1. Model Context Protocol (MCP)
-**Source:** Anthropic 2025
+### 1. Model Context Protocol (MCP) - November 2025 Spec
+**Source:** Anthropic (First Anniversary Release, November 2025)
 
-**Purpose:** Standardized protocol for LLM context access.
+**Purpose:** Standardized protocol for LLM context access and tool integration.
 
 **Architecture:**
 - Hosts: LLM applications (Claude Desktop, IDEs)
 - Clients: Protocol clients inside host
 - Servers: Programs exposing context (databases, APIs, files)
 
-**Features:** Decoupled architecture, unopinionated integration, lifecycle management
+**November 2025 Specification Updates:**
 
-**Multi-Agent Value:** Shared context via MCP servers, standardized interfaces, reduced custom integration.
+| Feature | Description |
+|---------|-------------|
+| **Task States** | working, input_required, completed, failed, cancelled |
+| **Sampling** | Server-initiated LLM calls, recursive interactions |
+| **Tool Definitions in Sampling** | Include tools in sampling requests |
+| **Parallel Tool Calls** | Concurrent execution support |
+| **Server-Side Agent Loops** | Full agent logic within MCP servers |
+| **Extensions Mechanism** | Experimental capabilities outside core spec |
+| **Enhanced Security** | Client security requirements, OAuth flows |
+
+**Sampling Capabilities (NEW):**
+```
+Before: MCP = Data retrieval protocol
+After:  MCP = Full agent orchestration framework
+
+Server can now:
+    1. Request LLM calls (sampling)
+    2. Include tool definitions
+    3. Enable parallel tool execution
+    4. Run complete agent loops
+    5. Handle credential collection, OAuth, payments
+```
+
+**Multi-Agent Value:** Shared context via MCP servers, standardized interfaces, server-side agent orchestration.
 
 ---
 
@@ -234,14 +460,42 @@
 
 ---
 
-### 3. Agent-to-Agent Protocol (A2A)
+### 3. Agent-to-Agent Protocol (A2A) - Updated December 2025
+
+**Source:** Google, 50+ technology partners (April 2025)
+
+**Architecture (3-Layer):**
+| Layer | Purpose | Details |
+|-------|---------|---------|
+| Layer 1 | Data Model | Protocol buffer messages |
+| Layer 2 | Abstract Operations | Protocol-independent semantics |
+| Layer 3 | Protocol Bindings | JSON-RPC, gRPC, HTTP/REST |
+
+**Core Operations:**
+- **Discover:** Query remote agent capabilities via agent cards
+- **Execute:** Submit tasks with service parameters
+- **Manage:** Task lifecycle and state transitions
+- **Report:** Results with optional error details
+
+**Agent Cards:**
+```
+Public Agent Card:
+    - Capabilities list
+    - Supported protocols
+    - Authentication requirements
+
+Extended Agent Card (authenticated clients):
+    - Additional capabilities
+    - Configuration details
+    - Rate limits
+```
 
 **Patterns:**
 - **Request-Response:** Synchronous interaction
 - **Publish-Subscribe:** Broadcast to interested agents
 - **Query-Inform:** Information seeking
 
-**Focus:** Direct peer-to-peer communication.
+**Security:** mTLS authentication, capability attestation (see security-essentials.md)
 
 ---
 
@@ -311,19 +565,87 @@
 
 ---
 
-### Comparative Performance (2024)
+### Comparative Performance (December 2025)
 
-**Function Calling Accuracy:**
+**BFCL V4 Leaderboard (Berkeley Function Calling):**
+
+| Model | Overall Score | Single-Turn | Multi-Turn Agentic |
+|-------|---------------|-------------|-------------------|
+| Gemini 1.5 Pro | **69.8/100** | Strong | Moderate |
+| LLaMA 3.1 70B | 65.9/100 | Strong | Moderate |
+| Mixtral 8x22B | 62.4/100 | Good | Limited |
+| GPT-4o | ~65/100 | Strong | Moderate |
+
+**Key Insights from BFCL V4:**
+- Single-turn tool use: many models excel
+- Multi-turn agentic: substantial capability gap
+- Challenges: memory of previous interactions, dynamic tool decisions, reasoning about outputs
+
+**OpenAI Structured Outputs (August 2024):**
 
 | Model | Complex Schema | Simple Schema | Overall |
 |-------|---------------|---------------|---------|
 | GPT-4o-2024-08-06 | 100% | 100% | 100% |
 | GPT-4o | 95% | 98% | 96.5% |
 | Claude 3.5 Sonnet | 92% | 96% | 94% |
-| Gemini 1.5 Pro | 90% | 95% | 92.5% |
-| GPT-4-0613 | 38% | 85% | 61.5% |
 
-**Source:** OpenAI evaluations, 2024
+**Source:** Berkeley BFCL V4 (ICML 2025), OpenAI evaluations
+
+---
+
+## Memory Architectures for Agents (NEW)
+
+### Memory Types
+
+| Type | Description | Implementation |
+|------|-------------|----------------|
+| **Parametric** | Knowledge in model weights | Pretraining |
+| **Working** | Current context window | Active prompt |
+| **Procedural** | How to perform tasks | Stored workflows, tool patterns |
+| **Episodic** | Specific past interactions | Experience logs, case-based |
+| **Semantic** | Structured factual knowledge | RAG, knowledge graphs |
+
+### Hierarchical Memory Architecture
+
+```
+                    ┌─────────────────┐
+                    │   Orchestrator  │
+                    │  (Meta-Agent)   │
+                    │                 │
+                    │  Parametric     │
+                    │  Working        │
+                    │  Procedural     │
+                    └────────┬────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        ↓                    ↓                    ↓
+   ┌─────────┐         ┌─────────┐         ┌─────────┐
+   │Episodic │         │Semantic │         │ Cross-  │
+   │ Memory  │         │ Memory  │         │ Agent   │
+   │ Agent   │         │ Agent   │         │ Working │
+   └─────────┘         └─────────┘         └─────────┘
+```
+
+### Episodic Memory (arXiv:2502.06975)
+
+**Five Key Properties:**
+1. Encoding individual experiences with temporal metadata
+2. Retrieval based on current context
+3. Flexible use to bias current reasoning
+4. Continuous updates as new experiences occur
+5. Integration with semantic memory for generalization
+
+**Current Gap:** Most LLM agents lack truly persistent experience storage across sessions.
+
+### Memory Trade-offs (arXiv:2510.23730)
+
+| Strategy | Token Reduction | Best For |
+|----------|-----------------|----------|
+| RAG | 90%+ | Small foundation models |
+| In-context learning | Variable | Strong reasoning models |
+| Episodic + Reflections | Moderate | Long-horizon agents |
+
+**Key Finding:** Optimal memory architecture depends on model capability and task complexity.
 
 ---
 
@@ -333,14 +655,26 @@
 
 **Core Concept:** Serial test-time compute—multiple sequential reasoning steps before output.
 
-**Claude 3.7 Sonnet:**
+**Claude 4 Extended Thinking:**
 - Accuracy scales logarithmically with thinking tokens
-- Tool use during extended thinking
+- Tool use during extended thinking (interleaved thinking - beta)
 - Dual modes: instant vs extended reasoning
+- Token budget: Start at 1,024, increase to ~32,000 max (diminishing returns beyond)
 
 **Performance:**
 - GPQA (Graduate Questions): 84.8% overall, 96.5% physics
 - AIME 2024 (Math): 61.3% pass@1, 80.0% pass@64
+
+**Interleaved Thinking (NEW):**
+```
+Traditional Extended Thinking:
+    Think → Output
+
+Interleaved (Claude 4 Beta):
+    Think → Tool Call → Observe → Think → Tool Call → Output
+
+Benefit: Reasoning between tool calls for complex agentic tasks
+```
 
 **Use Cases:** Complex math proofs, multi-step science reasoning, code debugging, strategic planning
 
@@ -612,6 +946,55 @@ Is task complex with multiple distinct subtasks?
 
 ---
 
+### December 2025 Research Additions
+
+29. **Test-Time Compute Scaling**
+    - arXiv:2408.03314
+    - 4x efficiency with compute-optimal allocation
+    - https://arxiv.org/abs/2408.03314
+
+30. **FAIRGAME: LLM Strategic Behavior**
+    - arXiv:2512.07462
+    - Game-theoretic analysis of LLM agents
+    - Cross-linguistic divergence findings
+
+31. **CoT Faithfulness by Unlearning (FUR)**
+    - arXiv:2502.14829
+    - Machine unlearning for faithfulness measurement
+    - r=0.889 correlation with prediction influence
+
+32. **Episodic Memory for LLM Agents**
+    - arXiv:2502.06975
+    - Five properties of episodic memory
+    - Gap analysis for current systems
+
+33. **Long-Term Memory Evaluation**
+    - arXiv:2510.23730
+    - RAG vs in-context learning trade-offs
+    - 90%+ token reduction with RAG
+
+34. **Emergent Coordination in Multi-Agent LLMs**
+    - arXiv:2510.05174
+    - Information decomposition framework
+    - ToM prompts enable goal-directed complementarity
+
+35. **Reason from Future (RFF)**
+    - arXiv:2506.03673
+    - Bidirectional reasoning paradigm
+    - Reverse + forward thought chains
+
+36. **A2A Protocol Specification**
+    - a2a-protocol.org, December 2025
+    - 3-layer architecture (data model, operations, bindings)
+    - 50+ technology partners
+
+37. **MCP November 2025 Specification**
+    - modelcontextprotocol.io
+    - Task states, sampling, server-side agent loops
+    - First anniversary release
+
+---
+
 ### Documentation
 
 15. **Prompt Engineering Overview**
@@ -634,8 +1017,10 @@ Is task complex with multiple distinct subtasks?
 - **Simple tasks:** Direct prompting
 - **Sequential reasoning:** Chain-of-Thought
 - **Tool-augmented:** ReAct
-- **Complex search:** Tree of Thoughts
+- **Complex search:** Tree of Thoughts / LATS
 - **Robustness:** Self-Consistency
+- **Bidirectional:** Reverse Thought Chain (RFF)
+- **Verifiable domains:** RLVR-trained models (o3, DeepSeek-R1)
 
 ### Multi-Agent Architecture
 - **1-2 domains:** Single agent
@@ -669,7 +1054,7 @@ Is task complex with multiple distinct subtasks?
 
 ---
 
-## Production Recommendations (2025)
+## Production Recommendations (December 2025)
 
 **Starting Point:**
 - Single-agent ReAct for tool-augmented tasks
@@ -678,7 +1063,23 @@ Is task complex with multiple distinct subtasks?
 - Extended thinking for critical reasoning
 - Always validate outputs for high-stakes decisions
 
+**2025 Research Insights:**
+| Insight | Implication |
+|---------|-------------|
+| RLVR improves sampling efficiency, not capability frontier | Base models + majority voting may outperform at scale |
+| CoT faithfulness is context-dependent (10x variation) | Careful prompting makes CoT highly informative |
+| Test-time compute: 4x efficiency with adaptive allocation | Don't apply uniform compute across problems |
+| ToM prompts enable goal-directed coordination | Add perspective-taking prompts for multi-agent systems |
+| MCP now supports server-side agent loops | Offload agent logic to MCP servers when appropriate |
+
 **Theoretical Foundation:**
 Match approach to problem complexity while managing API costs and latency. The research demonstrates clear evolution from simple prompting to sophisticated multi-agent architectures—choose based on task characteristics, not novelty.
 
 **For implementation examples:** See patterns-and-antipatterns.md and agentic-systems-cookbook.md
+
+---
+
+**Document Version**: 2.0 (Updated with December 2025 research)
+**Last Updated**: 2025-12-25
+
+**Sources**: arXiv papers (2408.03314, 2512.07462, 2502.14829, 2502.06975, 2506.03673, 2310.04406), METR CoT faithfulness study, A2A Protocol Spec, MCP November 2025 Spec, Berkeley BFCL V4

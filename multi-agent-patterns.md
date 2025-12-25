@@ -1,8 +1,21 @@
 # LangGraph Multi-Agent Patterns: Complete Guide (2025)
 
-**Based on**: Production case studies (LinkedIn, Uber, Replit, Elastic), LangChain benchmarks, official documentation, and real-world lessons learned
+**Based on**: Production case studies (LinkedIn, Uber, Replit, Elastic, Anthropic, Zapier), LangChain benchmarks, academic research (arXiv 2025), official documentation, and real-world lessons learned
 
-**Last Updated**: 2025-11-08
+**Last Updated**: 2025-12-25
+
+---
+
+## Key 2025 Research Findings
+
+| Finding | Source | Impact |
+|---------|--------|--------|
+| Architecture-task alignment > team size | arXiv:2512.08296 | Don't scale agents; align architecture |
+| 79% of failures: specification + coordination | getmaxim.ai | Focus on prompts, not infrastructure |
+| Swarm outperforms Supervisor (token efficiency) | LangChain | Use Swarm when no central control needed |
+| Context management bottleneck | Google ADK | Separate Session from Working Context |
+| 90.2% improvement with multi-agent (breadth) | Anthropic | Multi-agent excels at parallel search |
+| Theory-of-mind prompts enable emergence | arXiv:2510.05174 | Add "think about what others might do" |
 
 ---
 
@@ -1116,6 +1129,118 @@ compiled = main_graph.compile()
 
 ---
 
+### Anthropic: Multi-Agent Research System (2025)
+
+**Challenge**: Improve research depth and completeness in open-ended queries
+
+**Solution**: Parallel multi-agent exploration with breadth-first search
+
+**Architecture**: Swarm with parallel subagents
+- **Orchestrator**: Breaks down research into parallel tracks
+- **Research subagents**: Each explores different angles simultaneously
+- **Synthesizer**: Combines findings into coherent output
+
+**Research Findings** (arXiv/Anthropic 2025):
+- 90.2% improvement on breadth-first queries vs single agent
+- Multi-agent excels at **parallel exploration** (research, multiple data sources)
+- Single agent better for **deep sequential reasoning** (math proofs, step-by-step logic)
+
+**Key Lesson**: Match architecture to task nature—parallel exploration → multi-agent; deep reasoning → single agent
+
+---
+
+### Zapier: 800+ Agents in Production (2025)
+
+**Challenge**: Scale agent deployment across enterprise automation workflows
+
+**Solution**: Massive multi-agent deployment with centralized orchestration
+
+**Scale**:
+- 800+ specialized agents in production
+- Handles diverse automation tasks
+- Enterprise-grade reliability
+
+**Architecture Insights**:
+- **Agent specialization**: Each agent handles narrow domain
+- **Central routing**: Intelligent task-to-agent matching
+- **Error isolation**: Failed agents don't cascade to others
+- **Monitoring**: Comprehensive observability across all agents
+
+**Key Lesson**: Large-scale multi-agent is viable with proper orchestration and isolation
+
+---
+
+## Context Management Patterns (2025)
+
+### The Context Bottleneck Problem
+
+Research shows context management is the primary bottleneck in multi-agent systems (Google ADK 2025).
+
+**Two-Layer Context Architecture**:
+
+```
+┌─────────────────────────────────────────┐
+│           Session Context               │
+│  (Persistent across conversations)      │
+│  - User preferences                     │
+│  - Long-term memory                     │
+│  - Learned patterns                     │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│          Working Context                │
+│  (Current task state)                   │
+│  - Active messages                      │
+│  - Tool results                         │
+│  - Intermediate computations            │
+└─────────────────────────────────────────┘
+```
+
+### JSPLIT: 100x Token Reduction
+
+**Problem**: Full context passing between agents is expensive and slow
+
+**Solution**: JSPLIT (arXiv 2025) compresses context for handoffs
+
+```python
+# Instead of passing full message history
+handoff_context = jsplit_compress(
+    messages=state.messages,
+    relevance_threshold=0.7,
+    max_tokens=1000
+)
+
+# Achieves 100x token reduction with minimal info loss
+return Command(
+    goto="next_agent",
+    update={"compressed_context": handoff_context}
+)
+```
+
+**Key Insight**: Agents don't need full history—summarized context often sufficient
+
+### Context Degradation Patterns
+
+**Error Cascade Pattern**:
+```
+Agent A (small error) → Agent B (amplifies) → Agent C (fails)
+```
+
+**Prevention**:
+1. **Validation checkpoints**: Verify context quality at each handoff
+2. **Error bounds**: Set thresholds for acceptable context quality
+3. **Recovery hooks**: Allow agents to request clarification
+
+```python
+def validate_handoff(context):
+    quality_score = assess_context_quality(context)
+    if quality_score < 0.6:
+        return Command(goto="clarification_agent")
+    return Command(goto="next_agent", update={"context": context})
+```
+
+---
+
 ## Best Practices
 
 ### 1. State Management
@@ -1660,6 +1785,42 @@ else:
 
 ---
 
+### 8. Emergent Coordination (2025 Research)
+
+**Finding**: Theory-of-mind prompts enable emergent coordination (arXiv:2510.05174)
+
+**What Works**:
+```python
+# ✅ Add theory-of-mind to agent instructions
+agent = Agent(
+    instructions="""
+    You are Agent A in a multi-agent system.
+
+    Before acting, consider:
+    - What might other agents be doing right now?
+    - What information will they need from you?
+    - How will your output affect downstream agents?
+
+    [Rest of instructions...]
+    """
+)
+```
+
+**Why It Matters**:
+- Agents that "think about others" coordinate better
+- Reduces handoff errors and miscommunication
+- Enables emergent collaborative behavior without explicit programming
+
+**Anti-Pattern**:
+```python
+# ❌ Isolated agent thinking
+agent = Agent(
+    instructions="You are Agent A. Do X when asked."  # No awareness of system
+)
+```
+
+---
+
 ## Summary: Decision Tree
 
 ```
@@ -1709,5 +1870,6 @@ START
 
 ---
 
-**Last Updated**: 2025-11-08
-**Maintained By**: Research synthesis from LangChain documentation, production case studies, and community best practices
+**Last Updated**: 2025-12-25
+**Maintained By**: Research synthesis from LangChain documentation, production case studies, academic research (arXiv 2025), and community best practices
+**Key Sources**: LangChain benchmarks, Anthropic multi-agent research, Google ADK, arXiv:2512.08296, arXiv:2510.05174

@@ -4,7 +4,1198 @@
 
 **Last Updated:** 2025-12-25
 
-**Knowledge Foundation:** 18 comprehensive documents, 25+ academic papers, 14 failure modes, 11 production recipes, 5 case studies, latest 2025 model benchmarks, complete security research
+**Knowledge Foundation:** 18 comprehensive documents, 60+ academic papers, 14 failure modes, 11 production recipes, 5 case studies, December 2025 benchmarks, complete security research, browser automation, memory systems, MAST failure taxonomy, RAFA framework
+
+---
+
+## Practical Guides
+
+### Getting Started: Your First Agent (30 Minutes)
+
+**Choose Your SDK:**
+
+| SDK | Best For | Complexity | Language |
+|-----|----------|------------|----------|
+| **OpenAI Agents SDK** | Quick start, multi-agent | Low | Python/JS |
+| **LangGraph** | Complex workflows, state management | Medium | Python |
+| **Claude Agent SDK** | Planning-heavy, long-running tasks | Medium | Python |
+
+**Option 1: OpenAI Agents SDK (Simplest)** - v0.6.4 (Dec 2025)
+```
+pip install openai-agents
+```
+
+```python
+from agents import Agent, Runner
+
+# Define agent with instructions
+agent = Agent(
+    name="Assistant",
+    instructions="You are a helpful assistant. Answer concisely.",
+    model="gpt-4o-mini"  # Supports 100+ models
+)
+
+# Run agent
+result = await Runner.run(agent, "What is 2+2?")
+print(result.final_output)
+```
+
+**Key primitives:** Agents (LLM + instructions + tools), Handoffs (delegate to other agents), Guardrails (input/output validation), Sessions (conversation history), Tracing (built-in with LangSmith/Logfire).
+
+**Option 2: LangGraph (Most Flexible)**
+```
+pip install langgraph langchain-openai
+```
+
+```python
+from langgraph.graph import StateGraph, MessagesState
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+def agent_node(state: MessagesState):
+    return {"messages": [llm.invoke(state["messages"])]}
+
+graph = StateGraph(MessagesState)
+graph.add_node("agent", agent_node)
+graph.set_entry_point("agent")
+graph.set_finish_point("agent")
+
+app = graph.compile()
+result = app.invoke({"messages": [("user", "Hello!")]})
+```
+
+**Key concepts:** Nodes (computation units), Edges (connections), State (shared memory), Checkpoints (persistence).
+
+**Option 3: Claude Agent SDK (Planning-First)**
+```
+pip install anthropic  # Claude Agent SDK is part of Anthropic SDK
+```
+
+Built on Claude Code's production agent harness. Key features:
+- **Skills system**: Markdown files teaching Claude domain expertise
+- **Hooks**: Shell commands on lifecycle events (format on edit, notify on idle)
+- **Plugins**: Package and share skills + MCP servers + hooks
+- **MCP Integration**: 2000+ servers for tools/resources
+- **Context compaction**: Auto-summarize when context fills
+- Default model: Claude Sonnet 4.5 (Claude Opus 4.5 for complex)
+
+**Adding Tools (All SDKs):**
+```python
+def search_web(query: str) -> str:
+    """Search the web for information."""
+    # Implementation
+    return results
+
+# OpenAI SDK: Pass function directly
+agent = Agent(tools=[search_web])
+
+# LangGraph: Bind to model
+llm_with_tools = llm.bind_tools([search_web])
+```
+
+**First 30 Minutes Checklist:**
+- [ ] Install SDK (`pip install`)
+- [ ] Set API key (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
+- [ ] Create simple agent (copy example above)
+- [ ] Run basic query
+- [ ] Add one tool
+- [ ] Test tool calling
+
+**Common First-Time Mistakes:**
+1. Forgetting async/await (OpenAI SDK is async)
+2. Not handling tool errors
+3. Missing API key environment variable
+4. Overly complex first agent (start simple!)
+
+**Sources:** [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/quickstart/), [LangGraph Docs](https://langchain-ai.github.io/langgraph/), [Claude Agent SDK](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+
+---
+
+### Framework Selection Decision Tree
+
+```
+START: What's your primary need?
+│
+├─► Speed to market (weeks, not months)
+│   └─► OpenAI Agents SDK or CrewAI
+│       • Minimal boilerplate
+│       • Pre-built patterns
+│       • Quick prototyping
+│
+├─► Complex state management
+│   └─► LangGraph
+│       • Checkpoints & persistence
+│       • Human-in-the-loop built-in
+│       • Time travel debugging
+│
+├─► Long-running planning tasks
+│   └─► Claude Agent SDK
+│       • Auto-planning & decomposition
+│       • Context compaction
+│       • Agent Skills system
+│
+├─► Role-based collaboration
+│   └─► CrewAI
+│       • Define agents by role
+│       • Sequential/hierarchical flows
+│       • 12M+ daily executions
+│
+├─► Maximum control & customization
+│   └─► LangGraph or Custom
+│       • Build from primitives
+│       • Full graph control
+│       • Enterprise patterns
+│
+└─► Research/experimental
+    └─► AutoGPT or Custom
+        • Autonomous exploration
+        • Self-prompting
+        • Novel architectures
+```
+
+**Quick Comparison Matrix:**
+
+| Factor | OpenAI SDK | LangGraph | Claude SDK | CrewAI |
+|--------|-----------|-----------|------------|--------|
+| Learning curve | Low | Medium | Medium | Low |
+| Multi-agent | ✅ Handoffs | ✅ Full control | ⚠️ Limited | ✅ Role-based |
+| State management | Sessions | ✅ Checkpoints | Compact | Basic |
+| Human-in-loop | Guardrails | ✅ Built-in | Manual | Manual |
+| Production ready | ✅ | ✅ | ✅ | ✅ |
+| Best model | Any (100+ LLMs) | Any | Claude | Any |
+
+**Decision Quick Guide:**
+- **"I need something working today"** → OpenAI Agents SDK
+- **"I need complex workflows with state"** → LangGraph
+- **"I need planning and long-running tasks"** → Claude Agent SDK
+- **"I want role-based agent teams"** → CrewAI
+- **"I need maximum flexibility"** → LangGraph + custom code
+
+**Detailed Framework Comparison (December 2025):**
+
+| Aspect | LangGraph | CrewAI | AutoGen | OpenAI SDK |
+|--------|-----------|--------|---------|------------|
+| **Design** | Graph-based workflows | Role-based teams | Conversational agents | Handoff primitives |
+| **Learning curve** | Steep (graphs, states) | Easy (roles, tasks) | Moderate (chat patterns) | Low (minimal concepts) |
+| **Multi-agent** | Full control | Built-in collaboration | Async conversations | Handoff system |
+| **Memory** | Checkpoints, persistence | ChromaDB + SQLite | Manual | Sessions |
+| **Best for** | Complex state management | Team collaboration | Dialogue-heavy apps | Quick prototypes |
+| **Future** | Active development | Active development | **Migrating to MS Agent Framework** | Active development |
+
+**Important Note on AutoGen:**
+Microsoft has launched Agent Framework, combining AutoGen and Semantic Kernel. AutoGen will only receive bug fixes (no new features). If using AutoGen, plan migration to Microsoft Agent Framework.
+
+**Reference:** framework-comparison.md
+
+---
+
+### Security Hardening Checklist
+
+**Pre-Deployment Security (Must-Have):**
+
+```
+[ ] INPUT VALIDATION
+    ├─ [ ] Pattern matching for injection attacks
+    ├─ [ ] Encoding detection (base64, hex, URL)
+    ├─ [ ] Length limits on all inputs
+    ├─ [ ] Content type validation
+    └─ [ ] Rate limiting per user/IP
+
+[ ] OUTPUT FILTERING
+    ├─ [ ] PII detection and redaction
+    ├─ [ ] Credential/API key scanning
+    ├─ [ ] System prompt leak detection
+    ├─ [ ] Harmful content filtering
+    └─ [ ] Response length limits
+
+[ ] TOOL SANDBOXING
+    ├─ [ ] Process isolation (minimum)
+    ├─ [ ] Container isolation (recommended)
+    ├─ [ ] VM isolation (high-risk tools)
+    ├─ [ ] File system restrictions
+    ├─ [ ] Network restrictions
+    └─ [ ] Resource limits (CPU, memory, time)
+
+[ ] AUTHENTICATION & AUTHORIZATION
+    ├─ [ ] API key rotation policy
+    ├─ [ ] Per-tool permission matrix
+    ├─ [ ] User role-based access
+    └─ [ ] Audit logging enabled
+
+[ ] HUMAN-IN-THE-LOOP
+    ├─ [ ] Risk-based approval levels defined
+    ├─ [ ] Approval timeout configured
+    ├─ [ ] Escalation path documented
+    └─ [ ] Critical actions blocked by default
+```
+
+**Runtime Security:**
+```
+[ ] MONITORING
+    ├─ [ ] Injection attempt alerts (>10/hour)
+    ├─ [ ] Anomaly detection enabled
+    ├─ [ ] Failed auth alerts (>50/hour)
+    └─ [ ] Cost spike alerts
+
+[ ] INCIDENT RESPONSE
+    ├─ [ ] P0 runbook documented
+    ├─ [ ] Kill switch ready
+    ├─ [ ] Log preservation automated
+    └─ [ ] Notification channels configured
+```
+
+**Compliance Quick Check:**
+- [ ] **EU AI Act**: Risk level determined, documentation ready
+- [ ] **GDPR**: Lawful basis, data minimization, user rights
+- [ ] **OWASP Top 10**: All 10 risks addressed
+- [ ] **SOC 2**: If required, audit trails complete
+
+**Reference:** security-essentials.md, security-research.md
+
+---
+
+### Cost Estimation Guide
+
+**Cost Formula:**
+```
+Monthly Cost = (Requests × Tokens/Request × $/Token) + Tools + Infrastructure
+```
+
+**Token Pricing (December 2025):**
+
+| Model | Input $/1M | Output $/1M | Best For |
+|-------|-----------|-------------|----------|
+| GPT-4o | $2.50 | $10.00 | Complex reasoning |
+| GPT-4o-mini | $0.15 | $0.60 | Routing, simple tasks |
+| Claude Opus 4.5 | $15.00 | $75.00 | Hardest problems |
+| Claude Sonnet 4.5 | $3.00 | $15.00 | Balanced performance |
+| Claude Haiku | $0.25 | $1.25 | Speed, simple tasks |
+
+**Cost Estimation by Use Case:**
+
+| Use Case | Tokens/Request | Requests/Day | Monthly Cost |
+|----------|---------------|--------------|--------------|
+| Simple chatbot | 500 | 1,000 | $50-100 |
+| Code assistant | 2,000 | 500 | $200-400 |
+| Research agent | 10,000 | 100 | $500-1,000 |
+| Multi-agent system | 20,000 | 200 | $2,000-5,000 |
+
+**Cost Optimization Strategies:**
+
+| Strategy | Savings | Implementation |
+|----------|---------|----------------|
+| Model cascading | 40-60% | Use mini for simple, full for complex |
+| Prompt caching | 90% | Cache >1024 tokens, Anthropic only |
+| Response caching | 100% | Cache deterministic queries |
+| Tool RAG | 20-30% | Select 5-10 tools vs loading 50 |
+| Batching | 15-25% | Group similar requests |
+
+**Budget Calculator (Pseudocode):**
+```
+def estimate_monthly_cost(
+    requests_per_day: int,
+    avg_input_tokens: int,
+    avg_output_tokens: int,
+    model: str = "gpt-4o-mini"
+) -> float:
+    prices = {
+        "gpt-4o": (2.50, 10.00),
+        "gpt-4o-mini": (0.15, 0.60),
+        "claude-sonnet": (3.00, 15.00),
+        "claude-haiku": (0.25, 1.25),
+    }
+    input_price, output_price = prices[model]
+
+    monthly_requests = requests_per_day * 30
+    input_cost = (monthly_requests * avg_input_tokens / 1_000_000) * input_price
+    output_cost = (monthly_requests * avg_output_tokens / 1_000_000) * output_price
+
+    return input_cost + output_cost
+```
+
+**Break-Even Analysis:**
+- **Small scale** (1K requests/day): Break-even 6-9 months
+- **Medium scale** (10K requests/day): Break-even 3-6 months
+- **Large scale** (100K+ requests/day): Break-even 1-3 months
+
+**Reference:** api-optimization-guide.md
+
+---
+
+## Emerging Agent Technologies (2025)
+
+### Voice/Audio Agents
+
+**Platform Comparison:**
+
+| Platform | Latency | Cost | Best For |
+|----------|---------|------|----------|
+| OpenAI Realtime API | ~200ms TTFA | $0.06/min input, $0.24/min output | Tool-using voice agents |
+| ElevenLabs | ~150ms TTFA | $0.08/min (Business) | Expressive, emotional voices |
+| Google Gemini Live | ~200ms | Varies | Multi-modal (voice + video) |
+| Amazon Nova Sonic | Low | Varies | Enterprise, Bedrock integration |
+
+**Architecture Options:**
+1. **Speech-to-Speech (OpenAI Realtime)**: Single model, lowest latency, preserves nuance
+2. **Modular Pipeline (ElevenLabs)**: STT → LLM → TTS, flexible model choice, higher latency
+3. **Hybrid**: Use Realtime for response, ElevenLabs for custom voice
+
+**Key Capabilities (2025):**
+- MCP server support in voice agents
+- Image inputs during voice conversations
+- SIP phone calling integration
+- Tool calling with voice confirmation
+- WebRTC for browser, WebSocket for server
+
+**Use Cases:**
+- Customer support (24/7 voice agents)
+- Virtual assistants (hands-free interaction)
+- Accessibility (voice-first interfaces)
+- Phone systems (IVR replacement)
+
+**Sources:** [OpenAI Realtime API](https://openai.com/index/introducing-gpt-realtime/), [ElevenLabs Comparison](https://elevenlabs.io/blog/elevenlabs-agents-vs-openai-realtime-api-conversational-agents-showdown)
+
+---
+
+### Multi-Modal Agents (Vision + Text + Tools)
+
+**Current Capabilities (December 2025):**
+
+| Model | Vision | Tools | Audio | Video | Latency |
+|-------|--------|-------|-------|-------|---------|
+| GPT-4o | ✅ | ✅ | ✅ | ⚠️ | 320ms |
+| Claude Opus 4.5 | ✅ | ✅ | ❌ | ❌ | ~500ms |
+| Gemini 2.0 | ✅ | ✅ | ✅ | ✅ | ~400ms |
+| Qwen3-VL | ✅ | ✅ | ❌ | ❌ | Varies |
+
+**Vision Agent Use Cases:**
+1. **Document Processing**: Forms, invoices, contracts (95%+ accuracy)
+2. **UI Automation**: Screen reading, button clicking, form filling
+3. **Visual QA**: Analyze charts, diagrams, screenshots
+4. **Code Review**: Visual diff analysis, architecture diagrams
+
+**Multi-Modal Agent Architecture:**
+```
+Input (image/text/audio)
+    ↓
+┌─────────────────────────────────┐
+│   Multi-Modal Foundation Model   │
+│   (GPT-4o, Gemini 2.0, etc.)    │
+└─────────────────────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│         Tool Router              │
+│   - Vision tools (OCR, detect)   │
+│   - Action tools (click, type)   │
+│   - API tools (search, compute)  │
+└─────────────────────────────────┘
+    ↓
+Output (text/action/image)
+```
+
+**Security Considerations:**
+- Vision-enabled agents have new attack surfaces
+- Adversarial images can manipulate agent behavior
+- Screen content may contain sensitive data
+- Validate visual inputs like text inputs
+
+**Open-Source Alternatives:**
+- **Molmo** (1B-72B): Matches GPT-4V performance
+- **Qwen3-VL**: GUI operation, 30+ languages
+- **MiniCPM-V 8B**: Runs on mobile devices
+
+**Reference:** Multi-modal agents research, arXiv:2406.12814
+
+---
+
+### Agent-to-Agent Protocol (A2A)
+
+**Protocol Comparison:**
+
+| Feature | MCP (Anthropic) | A2A (Google) |
+|---------|-----------------|--------------|
+| Focus | Agent ↔ Tools (vertical) | Agent ↔ Agent (horizontal) |
+| Use case | Tool integration | Multi-agent orchestration |
+| Transport | JSON-RPC over stdio/HTTP | JSON-RPC over HTTP/SSE |
+| Modalities | Tools, resources | Audio, video, text streaming |
+| Long-running | Limited | ✅ Built-in (hours/days) |
+| Partners | 2,000+ servers | 50+ launch partners |
+
+**A2A Core Concepts:**
+- **Client Agent**: Formulates and communicates tasks
+- **Remote Agent**: Executes tasks and returns results
+- **Task Lifecycle**: Create → Execute → Stream updates → Complete
+- **Agent Cards**: Discovery mechanism (like MCP server manifests)
+
+**When to Use Each:**
+```
+MCP: Connect agent to external tools/data
+     ├─ Database queries
+     ├─ File operations
+     ├─ API integrations
+     └─ Memory systems
+
+A2A: Connect agent to other agents
+     ├─ Cross-vendor orchestration
+     ├─ Enterprise workflows
+     ├─ Long-running collaborations
+     └─ Multi-modal streaming
+```
+
+**A2A Design Principles:**
+1. **Agentic-first**: Unstructured, natural agent communication
+2. **Standards-based**: HTTP, SSE, JSON-RPC (easy integration)
+3. **Enterprise-secure**: OpenAPI-level auth at launch
+4. **Long-running**: Hours/days with real-time updates
+5. **Modality-agnostic**: Text, audio, video streaming
+
+**Industry Adoption:**
+- **Tech**: Atlassian, Salesforce, SAP, MongoDB, PayPal
+- **Consulting**: Deloitte, McKinsey, Accenture, PwC
+- **Donated to**: Linux Foundation (alongside MCP)
+
+**Sources:** [Google A2A Announcement](https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/), [MCP vs A2A Guide](https://auth0.com/blog/mcp-vs-a2a/)
+
+---
+
+### Real-Time/Streaming Agents
+
+**Why WebSockets for Agents:**
+- **Low latency**: No repeated HTTP handshakes
+- **Bi-directional**: Agent and user can send simultaneously
+- **Persistent**: Maintain state across interactions
+- **Efficient**: Continuous streams vs request/response
+
+**Platform Support:**
+
+| Platform | Protocol | Use Case |
+|----------|----------|----------|
+| OpenAI Realtime | WebRTC (browser), WebSocket (server) | Voice agents |
+| Google Gemini Live | WebSocket | Voice + video agents |
+| Amazon Bedrock AgentCore | WebSocket bi-directional | Enterprise agents |
+| LiveKit | WebRTC + TURN | Low-latency global voice |
+
+**Architecture Pattern:**
+```
+Client (Browser/App)
+    ↓ WebSocket/WebRTC
+Load Balancer
+    ↓
+Agent Server (maintains connection)
+    ↓ Internal API
+┌─────────────────────────────────┐
+│  LLM API (streaming enabled)    │
+│  - stream=True                  │
+│  - SSE for token streaming      │
+└─────────────────────────────────┘
+```
+
+**Key Considerations:**
+1. **Connection management**: Handle reconnects gracefully
+2. **State synchronization**: Keep client/server state in sync
+3. **Backpressure**: Handle slow clients
+4. **Scaling**: Sticky sessions or distributed state
+
+**Emerging: QUIC & Media over QUIC (MoQ)**
+- QUIC: Standard by mid-2025 (Google, Meta, Cloudflare)
+- MoQ: Cloudflare global relay network (330+ cities)
+- Benefits: Lower latency than TCP, better mobile performance
+
+**Latency Targets:**
+- **Voice response**: <500ms (feels real-time)
+- **Text streaming**: First token <200ms
+- **Action confirmation**: <1s
+- **Tool execution feedback**: Streaming updates
+
+**Sources:** [OpenAI Realtime API](https://platform.openai.com/docs/guides/realtime), [AWS Bedrock Streaming](https://aws.amazon.com/blogs/machine-learning/bi-directional-streaming-for-real-time-agent-interactions-now-available-in-amazon-bedrock-agentcore-runtime/)
+
+---
+
+### Browser Automation Agents (Operator, Computer Use)
+
+**Platform Comparison (December 2025):**
+
+| Platform | Model | OSWorld | WebArena | Availability |
+|----------|-------|---------|----------|--------------|
+| **OpenAI Operator** | CUA (Computer-Using Agent) | 38.1% | 58.1% | ChatGPT Pro ($200/mo) |
+| **Claude Computer Use** | Claude Sonnet 4.5 | 61.4% | N/A | API (beta) |
+| **ChatGPT Agent** | o3 + web browsing | N/A | Better than CUA | ChatGPT Plus+ |
+
+**OpenAI Operator:**
+- Powered by CUA model (GPT-4o vision + RL for GUIs)
+- Iterative loop: Screenshot → Reason → Act (click/scroll/type)
+- Asks for confirmation before external side effects
+- Available at operator.chatgpt.com
+- Expanding to Plus, Team, Enterprise users
+
+**Claude Computer Use:**
+- **OSWorld leader**: 61.4% (vs Operator 38.1%)
+- Tool versions: computer_20251124 (Opus 4.5), computer_20250124 (others)
+- Actions: screenshot, click, type, scroll, hold_key, zoom
+- Requires anthropic-beta header
+- Independent bash and text_editor tools
+
+**Architecture Pattern:**
+```
+User Request
+    ↓
+┌─────────────────────────────────┐
+│     Vision Model (CUA/Claude)   │
+│   Screenshot → Reasoning → Plan │
+└──────────────┬──────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│         Action Executor          │
+│   Click, Type, Scroll, Wait      │
+└──────────────┬──────────────────┘
+    ↓
+New Screenshot → Loop until complete
+```
+
+**Use Cases:**
+- Web research and data extraction
+- Form filling and submissions
+- E-commerce automation
+- Legacy system integration (no API)
+- Testing and QA automation
+
+**Safety Considerations:**
+- Always confirm before irreversible actions
+- Sandbox in VM/container for untrusted tasks
+- Monitor for credential exposure in screenshots
+- Rate limit to prevent runaway automation
+
+**Sources:** [OpenAI Operator](https://openai.com/index/introducing-operator/), [Claude Computer Use](https://docs.claude.com/en/docs/agents-and-tools/tool-use/computer-use-tool)
+
+---
+
+### Memory Systems for Agents (Mem0, GraphRAG)
+
+**Memory Types:**
+
+| Type | Purpose | Retention | Example |
+|------|---------|-----------|---------|
+| Short-term | Current task context | Session | Conversation history |
+| Episodic | Past experiences | Long-term | Previous task executions |
+| Semantic | Facts and knowledge | Permanent | Domain knowledge |
+| Procedural | How to do things | Long-term | Successful patterns |
+
+**Mem0 - Universal Memory Layer:**
+- **$24M Series A** (Oct 2025): YC, Basis Set, Peak XV
+- **41K+ GitHub stars**, 13M+ PyPI downloads
+- **Performance**: 26% accuracy boost, 91% lower p95 latency
+- **Architecture**: Hybrid graph + vector + key-value store
+- **Integration**: CrewAI, Flowise, Langflow, AWS Agent SDK (exclusive)
+- **API Growth**: 35M → 186M calls (Q1 to Q3 2025)
+
+**Mem0 Architecture:**
+```
+Incoming Message
+    ↓
+┌─────────────────────────────────┐
+│      Entity Extractor           │
+│   Identify nodes (people, etc)  │
+└──────────────┬──────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│      Relations Generator         │
+│   Infer labeled edges            │
+└──────────────┬──────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│      Hybrid Datastore            │
+│   Graph + Vector + Key-Value     │
+└─────────────────────────────────┘
+```
+
+**GraphRAG (Microsoft):**
+- Combines knowledge graphs with RAG
+- Extracts entities/relationships from documents
+- Hierarchical community detection for global queries
+- **Available**: Via Microsoft Discovery, GitHub open source
+- **Limitation**: Slow updates (recompute on change)
+
+**When to Use Each:**
+```
+Mem0: Real-time personalization, multi-session agents
+      ├─ User preferences over time
+      ├─ Conversation history
+      └─ Low-latency retrieval needs
+
+GraphRAG: Document understanding, research
+          ├─ Complex relationship queries
+          ├─ "Synthesize across documents"
+          └─ Batch processing acceptable
+```
+
+**Experience-Following Behavior (Research Finding):**
+- High similarity between input and memory → similar output
+- **Risk**: Error propagation, misaligned replay
+- **Mitigation**: Curate memory, include context, allow overrides
+
+**Sources:** [Mem0](https://mem0.ai/), [GraphRAG](https://github.com/microsoft/graphrag), [Mem0 Research Paper](https://arxiv.org/abs/2504.19413)
+
+---
+
+## Domain-Specific Agent Architectures
+
+### Code Generation Agents (SWE-bench Deep Dive)
+
+**Current Leaders (December 2025):**
+
+| Agent | SWE-bench Verified | SWE-bench Live | Architecture |
+|-------|-------------------|----------------|--------------|
+| Claude Opus 4.5 | 80.9% | ~20% | Minimal scaffold |
+| OpenHands + Claude 3.7 | 66.4% | ~19% | Critic model + scaling |
+| Devstral (Open Source) | 46.8% | ~15% | Mistral + OpenHands |
+| Devin | ~45% | ~15% | Autonomous agent |
+
+**Anthropic's Minimal Architecture:**
+Anthropic's approach: "Give as much control as possible to the language model itself, keep scaffolding minimal."
+- Only 2 tools: bash + file editing (string replacements)
+- No complex planning frameworks
+- Let the model drive the entire workflow
+
+**OpenHands Inference-Time Scaling:**
+```
+For each problem:
+1. Run agent multiple times (temperature=1.0)
+2. Generate multiple code patches
+3. Use critic model (Qwen 2.5 Coder 32B) to evaluate
+4. Select best solution
+
+Result: 60.6% → 66.4% with 5 attempts
+```
+
+**Key Insights:**
+- SWE-bench Live (real-world) scores are ~3x lower than Verified
+- Minimal scaffolding often outperforms complex frameworks
+- Inference-time scaling (multiple attempts + critic) improves results
+- Open-source (Devstral) approaching commercial performance
+
+**Sources:** [Anthropic SWE-bench](https://www.anthropic.com/engineering/swe-bench-sonnet), [OpenHands SOTA](https://openhands.dev/blog/sota-on-swe-bench-verified-with-inference-time-scaling-and-critic-model)
+
+---
+
+### Customer Support Agents
+
+**Klarna Case Study (Updated 2025):**
+- 2.3 million conversations, ~66% of all chats
+- Equivalent to 700 full-time agents
+- Built on LangGraph + LangSmith (OpenAI GPT-4)
+- Resolution time: 2 minutes (vs 11 minutes human)
+- **2025 Pivot**: Now hybrid AI+human model
+  - AI still handles 66% of inquiries
+  - Humans always available as option
+  - Quality issues drove rebalancing
+  - 25% reduction in repeat inquiries
+
+**Three-Layer Architecture:**
+```
+┌─────────────────────────────────┐
+│     Orchestration Layer          │
+│   (Router: AI vs Human)          │
+└──────────────┬──────────────────┘
+               ↓
+┌─────────────────────────────────┐
+│       Action Layer               │
+│   (API calls, transactions)      │
+│   - Middleware (n8n, Make)       │
+│   - Safe tool execution          │
+└──────────────┬──────────────────┘
+               ↓
+┌─────────────────────────────────┐
+│      Knowledge Layer             │
+│   (RAG over documentation)       │
+│   - Policy references            │
+│   - Product information          │
+└─────────────────────────────────┘
+```
+
+**Intercom Fin Pattern:**
+- GPT-4/Claude powered
+- Semantic search over knowledge base
+- RAG for technical questions
+- 86% resolution rate
+- Human handoff for complex issues
+
+**Hybrid Human-AI Model:**
+- AI handles: FAQs, status checks, simple transactions
+- Human handles: Complaints, edge cases, empathy-required
+- Escalation triggers: Sentiment, complexity, customer request
+
+**Key Metrics:**
+| Metric | AI Agent | Human | Target |
+|--------|----------|-------|--------|
+| Resolution time | 2 min | 11 min | <5 min |
+| Resolution rate | 66-86% | 95% | >70% |
+| CSAT | ~4.2/5 | 4.5/5 | >4.0 |
+| Cost per interaction | $0.10-0.50 | $5-15 | <$1 |
+
+**Sources:** [Klarna LangChain](https://blog.langchain.com/customers-klarna/), [OpenAI Klarna](https://openai.com/index/klarna/)
+
+---
+
+### Data Analysis Agents
+
+**Key Frameworks:**
+
+| Framework | Approach | Best For |
+|-----------|----------|----------|
+| PandasAI | Natural language → Python/SQL | Non-technical users |
+| LangChain DataFrame Agent | Agent + Pandas tools | Developers |
+| LlamaIndex | RAG + structured data | Complex queries |
+
+**PandasAI Architecture:**
+```
+User Query (natural language)
+    ↓
+┌─────────────────────────────────┐
+│     LLM (GPT-4/Claude)          │
+│   Translate to Python/SQL       │
+└──────────────┬──────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│     Code Execution Engine        │
+│   Execute against DataFrame      │
+└──────────────┬──────────────────┘
+    ↓
+Results (table/chart/answer)
+```
+
+**Supported Data Sources:**
+- SQL databases (PostgreSQL, MySQL, SQLite)
+- DataFrames (pandas, polars)
+- Files (CSV, Excel, Parquet)
+- NoSQL (MongoDB)
+
+**Example Queries:**
+```python
+# PandasAI usage
+import pandas as pd
+from pandasai import SmartDataframe
+
+df = SmartDataframe(pd.read_csv("sales.csv"))
+df.chat("What were the top 5 products by revenue last quarter?")
+df.chat("Show me a trend line of monthly sales")
+df.chat("Which region has the highest growth rate?")
+```
+
+**Benefits:**
+- 50% reduction in analysis time
+- Democratized data access (no SQL required)
+- Fewer human errors in queries
+- Real-time insights
+
+**Security Considerations:**
+- Validate generated SQL before execution
+- Limit data access by user role
+- Audit all queries
+- Prevent SQL injection in generated code
+
+**Sources:** [PandasAI GitHub](https://github.com/sinaptik-ai/pandas-ai), [LangChain DataFrame Agent](https://python.langchain.com/docs/tutorials/agents)
+
+---
+
+### Research/Writing Agents
+
+**Multi-Agent Research Architecture:**
+
+```
+┌─────────────────────────────────┐
+│        Coordinator Agent         │
+│   (Breaks task into subtasks)    │
+└──────────────┬──────────────────┘
+               ↓
+┌──────────────────────────────────────────────┐
+│                                              │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐      │
+│  │Researcher│  │ Analyst │  │ Writer  │      │
+│  │ (Search) │  │(Synth.) │  │(Draft)  │      │
+│  └─────────┘  └─────────┘  └─────────┘      │
+│                                              │
+└──────────────────────────────────────────────┘
+               ↓
+┌─────────────────────────────────┐
+│         Critic Agent             │
+│   (Review & feedback)            │
+└─────────────────────────────────┘
+```
+
+**Paper2Agent Framework:**
+Transforms research papers into interactive AI agents:
+1. Extract codebase and workflows from paper
+2. Package as reproducible agent
+3. Interface for downstream use
+4. Enable discovery and adoption
+
+**Commercial Research Agents:**
+- **Resea AI**: Academic papers, literature reviews
+- **Elicit**: Research question → paper summaries
+- **Consensus**: Scientific consensus from papers
+
+**Use Cases:**
+1. **Literature Reviews**: Search, summarize, synthesize papers
+2. **Content Generation**: Blog posts, reports, documentation
+3. **Academic Writing**: Draft papers, format citations
+4. **Market Research**: Competitor analysis, trend reports
+
+**Multi-Agent Patterns for Writing:**
+```
+Sequential: Research → Outline → Draft → Critique → Revise
+Parallel:   Multiple researchers → Merge findings
+Iterative:  Draft → Critique → Improve (loop until quality threshold)
+```
+
+**Sources:** [Paper2Agent](https://arxiv.org/abs/2509.06917), [LLM Agents Papers](https://github.com/AGI-Edgerunners/LLM-Agents-Papers)
+
+---
+
+### Coding/Developer Agents (Cursor, Windsurf, Devin, Claude Code)
+
+**Agent Levels:**
+
+| Level | Type | Examples | Human Role |
+|-------|------|----------|------------|
+| L1 | Autocomplete | Copilot (basic) | Every keystroke |
+| L2 | Chat Assistant | ChatGPT, Claude.ai | Every question |
+| L3 | Supervised Agent | Cursor, Windsurf | Approve each step |
+| L4 | Autonomous Agent | Claude Code, Devin | Review outcomes |
+
+**Architecture Comparison (December 2025):**
+
+| Tool | Engine | Key Features | Context | Price |
+|------|--------|--------------|---------|-------|
+| **Cursor 2.0** | Composer model | 4x faster MoE model, 8 parallel agents, git worktrees | Project index | $20/mo |
+| **Windsurf** | Cascade | Memory system, parallel agents, auto-linting | Dependency graph | $15/mo |
+| **Claude Code** | Native | Skills, hooks, plugins, MCP | 200K tokens | API usage |
+| **Devin 2.0** | Cognition | Cloud IDE, parallel Devins, Wiki | Full codebase | $20/mo+ |
+
+**Cursor 2.0 (December 2025):**
+- **Composer model**: Custom MoE, 4x faster than similar models, RL-trained for coding
+- **Multi-agent**: Run up to 8 agents in parallel on single prompt
+- **Git worktrees**: Each agent in isolated codebase copy
+- **AI Code Reviews**: Find and fix bugs with AI before commit
+- **Voice control**: Built-in speech-to-text for agent commands
+- **Sandboxing**: Linux + macOS secure shell execution
+
+**Windsurf Cascade (December 2025):**
+- **Memory system**: Auto-saves context between conversations
+- **Parallel agents**: Multi-pane Cascade, never wait
+- **Built-in planning**: Specialized planning agent + Todo tracking
+- **Turbo mode**: Auto-execute terminal commands
+- **Image-to-code**: Drop image, generate HTML/CSS/JS
+- **MCP store**: One-click server installation
+- Recognition: Gartner Magic Quadrant Leader 2025
+
+**Claude Code Advantages:**
+- **200K token context** (largest production context)
+- **Skills system**: Markdown files teaching domain expertise
+- **Hooks**: Trigger commands on lifecycle events
+- **Plugins**: Share and install packaged workflows
+- **MCP integration**: 2000+ tool servers
+- Autonomous multi-file edits with session persistence
+
+**Devin 2.0 (2025):**
+- **Price drop**: $500/mo → $20/mo (Core plan)
+- **Parallel Devins**: Multiple agents on different tasks
+- **DeepWiki**: Auto-generated codebase documentation
+- **Devin Search**: Natural language code queries
+- Available at app.devin.ai
+- Competes with GitHub Copilot, Windsurf, Amazon Q
+
+**IDE vs CLI Trade-offs:**
+| Factor | IDE (Cursor/Windsurf) | CLI (Claude Code) | Cloud (Devin) |
+|--------|----------------------|-------------------|---------------|
+| Interactive sessions | ✅ Excellent | ⚠️ Good | ✅ Excellent |
+| Long-running tasks | ⚠️ Context loss | ✅ State persisted | ✅ Cloud state |
+| Autonomous work | ⚠️ Limited | ✅ Full support | ✅ Full support |
+| Team collaboration | ✅ Extensions | ✅ Git native | ✅ Built-in |
+| Learning curve | Low | Medium | Low |
+
+**Sources:** [Cursor 2.0](https://cursor.com/blog/2-0), [Windsurf Cascade](https://windsurf.com/cascade), [Devin 2.0](https://venturebeat.com/programming-development/devin-2-0-is-here-cognition-slashes-price-of-ai-software-engineer-to-20-per-month-from-500)
+
+---
+
+## Advanced Production Topics
+
+### Agent Observability & Monitoring Deep Dive
+
+**Platform Comparison (December 2025):**
+
+| Platform | Type | Best For | GitHub Stars | Overhead |
+|----------|------|----------|--------------|----------|
+| LangSmith | Commercial | LangChain/LangGraph users | N/A | Near-zero |
+| Langfuse | Open Source | Self-hosted, MIT license | 19K+ | Low |
+| Braintrust | Commercial | Agent evaluation, CI/CD | N/A | Low |
+| Arize | Commercial | ML teams, drift detection | N/A | Low |
+| AgentOps | Commercial | Multi-agent systems | N/A | Low |
+
+**Key Observability Features:**
+1. **Tracing**: End-to-end visibility of agent decisions
+2. **Span Analysis**: Nested views of multi-step workflows
+3. **Latency Tracking**: Per-component timing breakdown
+4. **Cost Attribution**: Token usage by step/agent
+5. **Error Correlation**: Link failures to root causes
+
+**Tracing Architecture:**
+```
+User Request
+    ↓
+┌─────────────────────────────────┐
+│          Trace (root span)       │
+│  ├─ Agent A (span)               │
+│  │   ├─ LLM Call (span)          │
+│  │   ├─ Tool: search (span)      │
+│  │   └─ LLM Call (span)          │
+│  ├─ Agent B (span)               │
+│  │   └─ LLM Call (span)          │
+│  └─ Final Output (span)          │
+└─────────────────────────────────┘
+```
+
+**2025 Trends:**
+- Deeper agent tracing (LangGraph, AutoGen support)
+- Structured output monitoring (tools, multi-modal)
+- LLM-as-judge integration with observability
+- OpenTelemetry standardization for LLMs
+
+**Choosing a Platform:**
+- **LangChain ecosystem**: LangSmith (seamless integration)
+- **Self-hosted/open source**: Langfuse (MIT, 19K+ GitHub stars)
+- **Existing enterprise**: Datadog/Prometheus integration
+
+**Sources:** [LangSmith](https://www.langchain.com/langsmith/observability), [Langfuse](https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse)
+
+---
+
+### Production Deployment Patterns
+
+**Kubernetes for AI Agents (2025):**
+
+| Component | K8s Resource | Purpose |
+|-----------|-------------|---------|
+| Agent runtime | Deployment/StatefulSet | Agent execution |
+| Tool servers | Service/Pod | Tool endpoints |
+| State storage | PersistentVolume | Memory/checkpoints |
+| Message bus | StatefulSet (Kafka/NATS) | Agent communication |
+| Load balancer | Ingress/Service | Traffic distribution |
+
+**Google Agent Sandbox (KubeCon NA 2025):**
+- New K8s primitive for agent code execution
+- Built on gVisor + Kata Containers for kernel-level isolation
+- Secure boundary for tool execution and computer use
+- **Pre-warmed pools**: 90% faster than cold starts (<1s latency)
+- **Pod Snapshots**: Save/restore sandbox state in seconds
+- **Python SDK**: Manage sandbox lifecycle without infra knowledge
+- **Open Source**: kubernetes-sigs/agent-sandbox (K8s SIG Apps)
+- Core APIs: Sandbox, SandboxTemplate, SandboxClaim
+
+**Kagent Framework (CNCF Sandbox):**
+- Deploy MCP servers on Kubernetes
+- A2A protocol support
+- Production-ready scaling
+- GitOps integration
+
+**Deployment Patterns:**
+
+```
+1. STATELESS AGENTS (Simple)
+   ┌─────────────────────────────────┐
+   │    Kubernetes Deployment         │
+   │    - HPA for auto-scaling        │
+   │    - No persistent storage       │
+   │    - Fast startup                │
+   └─────────────────────────────────┘
+
+2. STATEFUL AGENTS (Memory)
+   ┌─────────────────────────────────┐
+   │    Kubernetes StatefulSet        │
+   │    - PersistentVolumeClaim       │
+   │    - Sticky sessions             │
+   │    - Checkpoint persistence      │
+   └─────────────────────────────────┘
+
+3. MULTI-AGENT SYSTEM
+   ┌─────────────────────────────────┐
+   │    Supervisor (Deployment)       │
+   │         ↓                        │
+   │    Worker Pool (StatefulSet)     │
+   │         ↓                        │
+   │    Message Bus (Kafka)           │
+   │         ↓                        │
+   │    State Store (Redis/Postgres)  │
+   └─────────────────────────────────┘
+```
+
+**Infrastructure Choices:**
+- **Container runtime**: gVisor (security), containerd (performance)
+- **State**: Redis (fast), PostgreSQL (durable), S3 (large artifacts)
+- **Messaging**: NATS (simple), Kafka (durable), Redis Streams (hybrid)
+
+**2025 Stats:**
+- 90%+ enterprises run K8s in production
+- 76% DevOps teams integrate AI (often on K8s)
+- 5.6M developers use Kubernetes
+
+**Sources:** [Google Agent Sandbox](https://cloud.google.com/blog/products/containers-kubernetes/agentic-ai-on-kubernetes-and-gke), [Kagent](https://kagent.dev/)
+
+---
+
+### Testing Strategies for Agents
+
+**Testing Pyramid for Agents:**
+
+```
+        ╱╲
+       ╱  ╲     End-to-End Tests
+      ╱────╲    (Full scenarios, expensive)
+     ╱      ╲
+    ╱────────╲   Integration Tests
+   ╱          ╲  (Workflow validation)
+  ╱────────────╲
+ ╱              ╲ Unit Tests
+╱────────────────╲ (Prompt, tools, components)
+```
+
+**Unit Testing:**
+- Test individual prompts with fixed inputs
+- Validate tool parameter extraction
+- Check output format compliance
+- Fast, cheap, specific
+
+**Integration Testing:**
+- Test complete agent workflows
+- Include tool execution
+- Run in CI/CD on each commit
+- Nightly smoke tests
+
+**End-to-End Testing:**
+- Full scenarios with real APIs
+- Human evaluation samples
+- Expensive but comprehensive
+
+**Evaluation Frameworks (December 2025):**
+
+| Framework | Focus | Automation | Key Feature |
+|-----------|-------|------------|-------------|
+| Promptfoo | Prompt testing | ✅ CI/CD | Local, fast iteration |
+| DeepEval | Agent evaluation | ✅ CI/CD | Built-in metrics |
+| OpenAI Evals | Model benchmarking | ✅ CLI | Standard benchmarks |
+| LangSmith | Tracing + eval | ✅ Platform | LangChain integration |
+| **Braintrust** | Agent trajectories | ✅ Platform | Loop scorer, remote evals |
+
+**Braintrust for Agents (2025):**
+- **Loop**: Generate custom scorers in natural language
+- **Trace-driven testing**: No custom instrumentation needed
+- **Trajectory evaluation**: Assess entire agent paths, not just outputs
+- **Offline + Online**: Unit tests → production monitoring
+- Framework-agnostic SDKs
+
+**Hybrid Evaluation Strategy:**
+```
+1. AUTOMATED (80%)
+   - LLM-as-judge scoring
+   - Regression detection
+   - Format validation
+   - Tool call correctness
+
+2. HUMAN REVIEW (20%)
+   - Edge cases
+   - Quality sampling
+   - Expert validation
+   - User feedback
+```
+
+**Key Metrics to Test:**
+- Task completion rate
+- Reasoning correctness
+- Tool usage accuracy
+- Latency percentiles
+- Cost per task
+- Hallucination rate
+
+**Best Practices:**
+1. Start with unit tests for prompts
+2. Add integration tests for workflows
+3. Include regression monitoring
+4. Sample human evaluation
+5. Run continuously in CI/CD
+
+**Sources:** [Testing AI Agents](https://galileo.ai/learn/test-ai-agents), [AI Agent Testing Trends 2025](https://qawerk.com/blog/ai-agent-testing-trends/)
+
+---
+
+### Agent Orchestration at Scale
+
+**Enterprise Orchestration Patterns:**
+
+| Pattern | Use Case | Governance | Complexity |
+|---------|----------|------------|------------|
+| Centralized | Strict compliance | High | Medium |
+| Decentralized | Autonomous teams | Low | High |
+| Hierarchical | Complex workflows | Medium | High |
+| Event-Driven | Real-time responses | Medium | Medium |
+| Hybrid Human-AI | Regulated industries | Highest | Medium |
+
+**Supervisor Pattern (Most Common):**
+```
+┌─────────────────────────────────┐
+│        Supervisor Agent          │
+│   - Task decomposition           │
+│   - Agent assignment             │
+│   - Result aggregation           │
+│   - Conflict resolution          │
+└──────────────┬──────────────────┘
+               ↓
+┌──────────────────────────────────────────────┐
+│                                              │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐      │
+│  │Agent A  │  │Agent B  │  │Agent C  │      │
+│  │(Domain1)│  │(Domain2)│  │(Domain3)│      │
+│  └─────────┘  └─────────┘  └─────────┘      │
+│                                              │
+└──────────────────────────────────────────────┘
+               ↓
+         Shared State / Message Bus
+```
+
+**Scale Benchmarks (2025):**
+- 8-10x memory reduction with optimization
+- 80%+ coordination efficiency at 10,000+ agents
+- 3x decision speed improvement
+- 45% reduction in hand-offs
+
+**Enterprise ROI:**
+- Average: 171% ROI in 12-18 months
+- Investment: $500K-$2M typical
+- Key savings: Labor, speed, accuracy
+
+**Scaling Challenges:**
+- 60% of multi-agent systems fail beyond pilot
+- Tool integration failures (primary barrier)
+- Governance complexity
+- Context synchronization
+
+**Platform Comparison:**
+
+| Platform | Orchestration | Scale | Enterprise |
+|----------|--------------|-------|------------|
+| Microsoft Copilot Studio | Multi-agent | ✅ | ✅ |
+| Amazon Bedrock Agents | Managed | ✅ | ✅ |
+| LangGraph | Flexible | ✅ | ⚠️ |
+| Kore.ai | Supervisor pattern | ✅ | ✅ |
+| CrewAI | Role-based | Medium | ⚠️ |
+
+**Keys to Success:**
+1. Start with single agent, plan for multi
+2. Define clear agent boundaries
+3. Implement shared context protocol
+4. Build governance from start
+5. Monitor and optimize continuously
+
+**Sources:** [Azure AI Agent Patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns), [Multi-Agent Orchestration 2025](https://www.onabout.ai/p/mastering-multi-agent-orchestration-architectures-patterns-roi-benchmarks-for-2025-2026)
 
 ---
 
@@ -55,12 +1246,16 @@
 30. Content pipeline? → Sequential with reflection (research→outline→write→critique→improve)
 
 **Advanced (31-33):**
-31. 2025 developments? → o3 (88% ARC-AGI), Claude Opus 4.5 (80.9% SWE-bench), ChatGPT Agent, MCP (2000+ servers), Mem0 (26% accuracy boost), LangGraph Supervisor/Swarm
-32. Academic failures? → 25-75% failure rates, 14 distinct modes, prompting alone only 14% improvement
+31. 2025 developments? → o3 (88% ARC-AGI), Claude Opus 4.5 (80.9% SWE-bench), GPT-5.2 (80.0%), Gemini 3 (45.1% ARC-AGI-2), DeepSeek-V3.1
+32. Academic failures? → MAST: 44.2% system design, 32.3% inter-agent, 23.5% verification failures
 33. Reasoning patterns? → CoT (1 call), ReAct (2-10 calls), ToT (10-100+ calls), Extended Thinking
 33a. CoT limitations? → "Brittle mirage" outside training distribution, fails on novel patterns
 33b. Reason from Future? → Bidirectional reasoning (top-down + bottom-up), better for planning
 33c. LATS? → Tree search + ReAct + MCTS, outperforms ToT for complex tasks
+33d. RAFA? → Reason for Future, Act for Now - √T regret bounds, principled planning
+33e. Graph-CoT? → Tree reasoning structure, 95.7% token reduction, 38% accuracy improvement
+33f. MAST Taxonomy? → 14 failure modes in 3 categories, most from system design not model
+33g. RAFFLES? → Agentic debugging, Judge+Evaluator agents, 43% fault attribution accuracy
 
 **Decision Frameworks (34-36):**
 34. Go/No-Go decision? → See comprehensive checklist below
@@ -327,30 +1522,47 @@
 ## Advanced Topics & Research
 
 ### Q31: 2025 Developments?
-**Answer:** Key innovations: LangGraph Command Tool (dynamic routing), Supervisor/Swarm libraries (pre-built patterns), extended thinking (96.5% physics accuracy), GPT-4o structured outputs (100% schema adherence vs 40% before), Anthropic prompt caching (90% savings), Model Context Protocol (standardized integration).
+**Answer:** Key innovations:
 
-**Reference:** multi-agent-patterns.md, theoretical-foundations.md, api-optimization-guide.md
+**Frontier Models:**
+- **o3/o4-mini**: 88% ARC-AGI (high compute), 96.7% AIME, adjustable reasoning effort
+- **Claude Opus 4.5**: 80.9% SWE-bench, 61.4% OSWorld, 1% prompt injection success
+- **GPT-5/5.2**: 80.0% SWE-bench, 59.22% BFCL, 52.6% MCPMark
+- **Gemini 3**: 45.1% ARC-AGI-2, 81% MMMU-Pro, 87.6% Video-MMMU, long-horizon planning
+- **DeepSeek-V3.1**: Hybrid thinking/non-thinking mode (20-50% token reduction)
+
+**Agent Platforms:**
+- **ChatGPT Agent**: Integrated web browsing + tool use
+- **OpenAI Operator**: Browser automation with CUA model
+- **Cursor 2.0**: Composer model (4x faster), 8 parallel agents
+- **Devin 2.0**: Price drop $500→$20/mo, 12x faster migrations (Nubank)
+
+**Infrastructure:**
+- **Mem0**: $24M Series A, 26% accuracy boost, 91% lower latency
+- **MCP + A2A**: Donated to Linux Foundation, 2000+ MCP servers
+- **Agent Sandbox**: Google's K8s primitive (KubeCon NA 2025)
+- **Langfuse**: 19K+ GitHub stars, MIT license
+
+**Research:**
+- **MAST Taxonomy**: 14 failure modes, 44% from system design (not model)
+- **RAFFLES**: Agentic debugging, 43% fault attribution accuracy
+
+**Reference:** multi-agent-patterns.md, theoretical-foundations.md, api-optimization-guide.md, 2025-updates.md
 
 ---
 
 ### Q31a: What are Modern Memory Architectures?
-**Answer:** 2025 memory systems (arXiv:2404.13501, arXiv:2505.16067):
+**Answer:** See "Memory Systems for Agents (Mem0, GraphRAG)" section above for full details. Key points:
 
-**Memory Types**:
-| Type | Purpose | Retention | Example |
-|------|---------|-----------|---------|
-| Short-term | Current task context | Session | Conversation history |
-| Episodic | Past experiences | Long-term | Previous task executions |
-| Semantic | Facts and knowledge | Permanent | Domain knowledge |
-| Procedural | How to do things | Long-term | Successful patterns |
+**Memory Types**: Short-term (session), Episodic (experiences), Semantic (facts), Procedural (patterns)
 
 **Key Systems (2025)**:
-- **Mem0**: 26% accuracy boost, 91% lower latency, graph-based
-- **GraphRAG**: Relationship-aware retrieval
+- **Mem0**: $24M Series A, 26% accuracy boost, 91% lower latency, 41K GitHub stars
+- **GraphRAG**: Microsoft's knowledge graph + RAG
 - **MemGPT/Letta**: Self-editing memory blocks
 - **MIRIX**: Multi-level (STM/MTM/LPM)
 
-**Reference:** 2025-updates.md, arXiv:2404.13501
+**Reference:** Memory Systems section, 2025-updates.md, arXiv:2404.13501
 
 ---
 
@@ -424,19 +1636,122 @@
 
 ---
 
+### Q33d: What is RAFA (Reason for Future, Act for Now)?
+**Answer:** RAFA (arXiv:2310.12346) provides provable regret guarantees for agent behavior:
+
+**Core Mechanism:**
+1. **Plan ahead**: At each state, plan trajectories multiple steps into future
+2. **Act now**: Execute only the first action of that plan
+3. **Observe**: Get environment feedback
+4. **Update**: Revise beliefs about environment
+5. **Replan**: Generate new plan from updated state
+
+**Theoretical Guarantee**: Achieves √T regret bounds in Bayesian adaptive MDPs.
+
+**Practical Benefit**: Principled framework for balancing planning depth vs execution speed. Optimal agent design involves specific ratios - over-planning wastes compute, under-planning increases errors.
+
+**Reference:** arXiv:2310.12346, agentification.github.io/RAFA/
+
+---
+
+### Q33e: What is Graph Chain-of-Thought (Graph-CoT)?
+**Answer:** Graph-CoT (arXiv:2511.01633) transforms sequential reasoning into tree structures:
+
+**Key Innovation:**
+- Convert linear CoT into branching tree structures
+- Enable selective context sharing between branches
+- Prune irrelevant reasoning paths early
+
+**Performance:**
+- **95.7% token reduction** compared to standard CoT
+- **38% accuracy improvement** on complex reasoning tasks
+- Particularly effective for problems requiring exploration of multiple solution paths
+
+**Use When**: Complex reasoning with multiple valid approaches, resource-constrained deployments, tasks where exhaustive exploration is wasteful.
+
+**Reference:** arXiv:2511.01633
+
+---
+
+### Q33f: What is the MAST Failure Taxonomy?
+**Answer:** MAST (NeurIPS 2025, arXiv:2503.13657) analyzed 1,600+ execution traces across 7 frameworks to identify 14 failure modes in 3 categories:
+
+**1. System Design Issues (44.2% of failures):**
+| Failure Mode | Frequency | Description |
+|--------------|-----------|-------------|
+| Task disobedience | 15.7% | Agents ignore specifications |
+| Step repetition/loops | 13.2% | Recursive loops, infinite cycling |
+| Context window loss | 6.8% | History truncated mid-conversation |
+| Tool misuse | 8.5% | Wrong tool selection or parameters |
+
+**2. Inter-Agent Misalignment (32.3% of failures):**
+| Failure Mode | Frequency | Description |
+|--------------|-----------|-------------|
+| Assumption failures | 12.4% | Agents fail to clarify assumptions |
+| Task derailment | 11.8% | Agents pursue irrelevant discussions |
+| Information withholding | 8.2% | Lossy state transfer between agents |
+
+**3. Task Verification (23.5% of failures):**
+| Failure Mode | Frequency | Description |
+|--------------|-----------|-------------|
+| Premature termination | 9.1% | Declare complete before criteria met |
+| Incorrect verification | 2.8% | Generators can't see own errors |
+| Missing validation | 11.6% | No output quality checks |
+
+**Critical Insight**: Most failures stem from system design, not model capability. Focus on architectural patterns, not waiting for better models.
+
+**Reference:** arXiv:2503.13657, NeurIPS 2025
+
+---
+
+### Q33g: What is the RAFFLES Debugging Framework?
+**Answer:** RAFFLES (Capital One, 2025) treats agent debugging as an agentic task:
+
+**Architecture:**
+```
+Execution Trace
+    ↓
+┌─────────────────────────────────┐
+│         Judge Agent             │
+│   Analyze trace, propose        │
+│   hypotheses about failures     │
+└──────────────┬──────────────────┘
+    ↓
+┌─────────────────────────────────┐
+│       Evaluator Agents          │
+│   Critique Judge's reasoning    │
+│   Challenge weak hypotheses     │
+└──────────────┬──────────────────┘
+    ↓
+Iterate until high-confidence attribution
+```
+
+**Performance**: 43% accuracy on fault attribution vs 16.6% for prior methods (2.6x improvement).
+
+**Implication**: Debugging agents with agents is viable and effective. Build agentic observability systems.
+
+**Reference:** NeurIPS 2025 Applied AI briefings
+
+---
+
 ## Benchmarks & Evaluation
 
 ### Q42: What are the Key Agent Benchmarks?
 **Answer:**
 | Benchmark | Focus | Top Score (Dec 2025) | Tasks |
 |-----------|-------|---------------------|-------|
-| **SWE-bench** | Code fixes | 80.9% (Claude Opus 4.5) | 2,294 GitHub issues |
+| **SWE-bench Verified** | Code fixes | 80.9% (Claude Opus 4.5), 80.0% (GPT-5.2) | 2,294 GitHub issues |
 | **SWE-bench+** | Harder code fixes | ~65% | Mitigates solution leakage |
 | **GAIA** | General assistant | ~50% | 466 multi-step tasks |
-| **WebArena** | Web automation | ~35% | 812 web tasks |
+| **WebArena** | Web automation | 58.1% (Operator) | 812 web tasks |
+| **OSWorld** | Computer use | 61.4% (Claude), 38.1% (Operator) | GUI automation |
 | **AgentBench** | Multi-domain | Varies | 8 environments |
-| **BFCL** | Function calling | 90%+ | API accuracy |
-| **ARC-AGI** | Reasoning | 88% (o3) | Abstract patterns |
+| **BFCL** | Function calling | 90%+ (GPT-4o, Claude) | API accuracy |
+| **MCPMark** | MCP implementation | 52.6% (GPT-5) | Tool integration |
+| **ARC-AGI** | Abstract reasoning | 88% (o3 high-compute) | Novel patterns |
+| **ARC-AGI-2** | Harder reasoning | 45.1% (Gemini 3), 2.9% (o3) | Harder abstract patterns |
+
+**ARC-AGI vs ARC-AGI-2 Gap**: o3 scores 88% on ARC-AGI but only 2.9% on ARC-AGI-2, revealing generalization limits.
 
 **Reference:** 2025-updates.md, leaderboard links in task.md
 
@@ -490,16 +1805,51 @@
 ## Security & Safety Questions
 
 ### Q37: How to Defend Against Prompt Injection?
-**Answer:** Multi-layer defense: 1) Input validation (pattern matching for known attacks, encoding detection, length limits), 2) Semantic filtering (LLM-based intent classification), 3) Output filtering (PII/credential redaction), 4) Delimiter separation between system and user content, 5) Monitoring for anomalous patterns. No single defense is sufficient - prompt injection remains #1 OWASP risk with 73% of deployments affected.
+**Answer:** Multi-layer defense:
 
-**Reference:** security-research.md, security-essentials.md
+**Detection Layers:**
+1. **Input validation**: Pattern matching, encoding detection (base64, hex, URL), length limits
+2. **Semantic filtering**: LLM-based intent classification
+3. **Output filtering**: PII/credential redaction, system prompt leak detection
+4. **Delimiter separation**: Clear boundaries between system and user content
+5. **Monitor model**: Dedicated model watching for suspicious behavior (Operator approach)
+
+**2025 State-of-the-Art:**
+- **Claude Opus 4.5**: 1% attack success rate under Best-of-N adaptive attacks (Anthropic)
+- **Key defenses**: RL exposure to injections during training, improved classifiers, human red teaming
+- **Reality**: 1% is progress, not a solution - web remains adversarial environment
+
+**OWASP Top 10 2025 Emphasis**: "Excessive Agency" - danger of unchecked LLM autonomy with external functions.
+
+**Reference:** security-research.md, security-essentials.md, Anthropic prompt injection research
 
 ---
 
 ### Q38: What Sandboxing is Required for Tool Execution?
-**Answer:** Multi-layer isolation: Layer 1 (Process) - subprocess with resource limits (timeout, memory). Layer 2 (Container) - Docker with security options (no-new-privileges, seccomp, cap-drop ALL, read-only filesystem). Layer 3 (VM) - Firecracker microVMs for maximum isolation. Also: WebAssembly for safe code execution, RestrictedPython for limited Python. Always combine with permission systems, rate limiting, and parameter validation.
+**Answer:** Multi-layer isolation with security/performance trade-offs:
 
-**Reference:** security-research.md (Section 2.1)
+**Layer Comparison:**
+| Layer | Isolation | Performance | Best For |
+|-------|-----------|-------------|----------|
+| **Process** | Low | Fastest | Trusted internal code |
+| **Container (LXC)** | Medium | Minimal overhead | Batch operations |
+| **gVisor** | High | Moderate CPU cost | User-mode kernel isolation |
+| **Firecracker microVM** | Highest | Slight overhead | Untrusted code execution |
+
+**Firecracker Advantages (Recommended for Agent Tools):**
+- Fresh VM creation per session
+- Kernel-level isolation
+- Deterministic cleanup
+- Built-in network separation
+- Optimal for agents executing untrusted commands
+
+**Also Required:**
+- Permission systems with whitelisted parameters
+- Rate limiting per tool/user
+- Parameter validation before execution
+- Resource limits (CPU, memory, time)
+
+**Reference:** security-research.md (Section 2.1), codeant.ai/agentic-rag-shell-sandboxing
 
 ---
 
@@ -720,10 +2070,12 @@
 **Model Selection Quick Guide (December 2025):**
 - Router/Simple: gpt-4o-mini, claude-haiku
 - Structured output: gpt-4o-2024-08-06 (100% adherence)
-- Complex reasoning: Claude Opus 4.5 + extended thinking, o3
-- Coding tasks: Claude Opus 4.5 (80.9% SWE-bench), o3 (69.1%)
+- Complex reasoning: o3/o4-mini (88% ARC-AGI), Claude Opus 4.5 + extended thinking
+- Coding tasks: Claude Opus 4.5 (80.9% SWE-bench), GPT-5.2 (80.0%), o3 (69.1%)
 - Long-form writing: Claude Sonnet 4.5
-- Browser automation: ChatGPT Agent, Claude Computer Use
+- Browser automation: Claude Computer Use (61.4% OSWorld), OpenAI Operator (38.1%)
+- Multi-modal: Gemini 3 (81% MMMU-Pro, 87.6% Video-MMMU)
+- Cost-efficient reasoning: DeepSeek-V3.1 (hybrid think/non-think)
 - Speed critical: claude-haiku or gpt-4o-mini
 
 **Architecture Quick Select:**

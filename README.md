@@ -2,7 +2,7 @@
 
 **Complete reference for building production multi-agent systems**
 
-Last Updated: 2025-12-25 | 14 Documents | 90,000+ words | 40+ Academic References
+Last Updated: 2025-12-25 (Final December Update) | 14 Documents | 68,000+ words | 50+ Academic References
 
 ---
 
@@ -10,14 +10,20 @@ Last Updated: 2025-12-25 | 14 Documents | 90,000+ words | 40+ Academic Reference
 
 | I want to... | Go to |
 |--------------|-------|
-| Get quick answers | [topics.md](topics.md) - 45+ questions with answers |
+| **Build my first agent** | [topics.md](topics.md) → Getting Started (30 min) |
+| Get quick answers | [topics.md](topics.md) - 60+ questions with answers |
+| Choose a framework | [topics.md](topics.md) → Framework Selection Decision Tree |
 | Understand architectures | [framework-comparison.md](framework-comparison.md) |
-| Compare frameworks | [multi-agent-patterns.md](multi-agent-patterns.md) |
+| Compare multi-agent patterns | [multi-agent-patterns.md](multi-agent-patterns.md) |
 | Avoid common failures | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) |
 | Optimize costs | [api-optimization-guide.md](api-optimization-guide.md) |
 | Secure my agent | [security-essentials.md](security-essentials.md) |
+| Build voice/audio agents | [topics.md](topics.md) → Voice/Audio Agents |
+| Build coding agents | [topics.md](topics.md) → Coding/Developer Agents |
+| Build browser agents | [topics.md](topics.md) → Browser Automation Agents |
+| Add agent memory | [topics.md](topics.md) → Memory Systems (Mem0, GraphRAG) |
+| Deploy at scale | [topics.md](topics.md) → Agent Orchestration at Scale |
 | Evaluate & debug | [evaluation-and-debugging.md](evaluation-and-debugging.md) |
-| Advanced paradigms | [advanced-agent-paradigms.md](advanced-agent-paradigms.md) |
 | See latest 2025 updates | [2025-updates.md](2025-updates.md) |
 | Track research progress | [task.md](task.md) |
 
@@ -27,17 +33,42 @@ Last Updated: 2025-12-25 | 14 Documents | 90,000+ words | 40+ Academic Reference
 
 ### Core Concepts (Start Here)
 ```
-topics.md                    # 45 critical questions answered
+topics.md                    # 60+ critical questions answered
+├── PRACTICAL GUIDES (NEW)
+│   ├── Getting Started      # First agent in 30 minutes
+│   ├── Framework Decision   # Visual decision tree
+│   ├── Security Checklist   # Pre-deployment hardening
+│   └── Cost Estimation      # Pricing, ROI calculator
+│
+├── EMERGING TECH (NEW)
+│   ├── Voice/Audio Agents   # OpenAI Realtime, ElevenLabs
+│   ├── Multi-Modal Agents   # Vision + Text + Tools
+│   ├── A2A Protocol         # Agent-to-Agent (Google)
+│   ├── Real-Time Agents     # WebSocket, streaming
+│   ├── Browser Automation   # Operator, Claude Computer Use
+│   └── Memory Systems       # Mem0, GraphRAG
+│
+├── DOMAIN AGENTS (NEW)
+│   ├── Code Generation      # SWE-bench deep dive
+│   ├── Customer Support     # Klarna, Intercom patterns
+│   ├── Data Analysis        # PandasAI, natural language
+│   ├── Research/Writing     # Paper2Agent, multi-agent
+│   └── Coding Agents        # Cursor, Windsurf, Devin, Claude Code
+│
+├── PRODUCTION (NEW)
+│   ├── Observability        # LangSmith, Langfuse, tracing
+│   ├── Deployment           # K8s, Agent Sandbox, Kagent
+│   ├── Testing              # Unit, Integration, E2E
+│   └── Orchestration        # Enterprise scale (10K+ agents)
+│
 ├── Business (Q1-6)          # Build vs buy, ROI, risks
-├── Technical (Q7-12a)       # Architecture, state, tools, 3Ws framework
+├── Technical (Q7-12a)       # Architecture, state, tools
 ├── Implementation (Q13-17)  # Models, prompting, caching
 ├── Production (Q18-20)      # Metrics, errors, debugging
 ├── Cost (Q21-23)            # Optimization, budgets
 ├── Troubleshooting (Q24-26) # Failure fixes
-├── Domain Apps (Q27-30)     # Code review, research, support
-├── Advanced (Q31-33c)       # Memory, reasoning, CoT, LATS, RFF
-├── Frameworks (Q34-36)      # Decision checklists
-├── Security (Q37-41)        # Injection, sandboxing, compliance
+├── Advanced (Q31-33c)       # Memory, reasoning, CoT, LATS
+├── Security (Q37-41)        # Injection, sandboxing
 └── Benchmarks (Q42-45)      # AgentBench, BFCL, SWE-bench+
 ```
 
@@ -76,7 +107,7 @@ security-essentials.md               # Consolidated security guide
 ### Core Reference
 | Document | Lines | Purpose |
 |----------|-------|---------|
-| [topics.md](topics.md) | 900+ | Quick reference - 45 questions |
+| [topics.md](topics.md) | **1980+** | Quick reference - 60+ questions + 19 guides |
 | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) | 813 | 14 failure modes with fixes |
 | [theoretical-foundations.md](theoretical-foundations.md) | 650+ | Academic citations and theory |
 
@@ -132,16 +163,22 @@ security-essentials.md               # Consolidated security guide
 
 ---
 
-## Key Numbers
+## Key Numbers (December 2025)
 
 | Metric | Value | Source |
 |--------|-------|--------|
+| GPT-5 AIME (Math) | 94.6% | OpenAI |
+| GPT-5 SWE-bench Verified | 74.9% | OpenAI |
 | Claude Opus 4.5 SWE-bench | 80.9% | Anthropic |
+| Agent S OSWorld | **72.6%** | Simular (beats human 72.36%) |
+| Claude Computer Use OSWorld | 61.4% | Anthropic |
 | o3 ARC-AGI | 88% | OpenAI |
-| MCP Servers | 2,000+ | Linux Foundation |
-| Prompt Injection Attack Success | 89.6% | OWASP 2025 |
+| MCP Servers | **10,000+** | Linux Foundation AAIF |
+| Mem0 Accuracy Boost | 26% | Mem0 Research |
+| Enterprise Testing Agents | 72% | Deloitte |
+| Enterprise Production Agents | **11%** | Deloitte |
+| Prompt Injection Attack Surge | 540% | OWASP 2025 |
 | Cost Reduction (with optimization) | 50-80% | Production data |
-| Failure Rate Reduction (with patterns) | 35%→8% | Academic research |
 
 ---
 
@@ -154,13 +191,13 @@ security-essentials.md               # Consolidated security guide
 5+ domains + dynamic          → Swarm
 ```
 
-### Model Selection (Dec 2025)
+### Model Selection (December 2025)
 ```
 Router/Simple     → gpt-4o-mini, claude-haiku
 Structured output → gpt-4o-2024-08-06 (100% JSON)
-Complex reasoning → Claude Opus 4.5 + extended thinking
-Coding tasks      → Claude Opus 4.5 (80.9% SWE-bench)
-Browser automation→ ChatGPT Agent, Claude Computer Use
+Complex reasoning → GPT-5 (94.6% AIME), Claude Opus 4.5 + extended thinking, o3
+Coding tasks      → Claude Opus 4.5 (80.9% SWE-bench), GPT-5 (74.9%)
+Browser automation→ Agent S (72.6% OSWorld - beats human!), Claude Computer Use (61.4%)
 ```
 
 ### Cost Optimization
@@ -191,4 +228,4 @@ See [task.md](task.md) for:
 
 ---
 
-**Built with research from**: Anthropic, OpenAI, Google, LangChain, OWASP, arXiv, and 25+ academic papers
+**Built with research from**: Anthropic, OpenAI, Google, LangChain, OWASP, arXiv, and 50+ academic papers

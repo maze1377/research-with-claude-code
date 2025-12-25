@@ -4,16 +4,31 @@
 
 ---
 
+## December 2025 Security Landscape
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Prompt injection surge | **540%** increase in 2025 | OWASP/Industry data |
+| Claude Opus 4.5 ASR | **4.7%** attack success (k=1) | HarmBench Security Testing |
+| GPT-5.1 ASR | 12.6% attack success (k=1) | HarmBench Security Testing |
+| Multi-agent cascade failures | 41-86.7% without orchestration | MAST Research |
+| MCP breaches (2025) | 3 major incidents | GitHub, Asana, Anthropic |
+| Blockchain vulns by AI agents | $550.1M discovered | Security research |
+
+---
+
 ## Executive Summary
 
 | Risk | Severity | Prevalence | Defense Status |
 |------|----------|------------|----------------|
-| Prompt Injection | Critical | 73% of deployments | No reliable defense |
-| Tool Misuse | High | 45% | Sandboxing effective |
+| Prompt Injection | Critical | 73% of deployments | 540% surge in attacks |
+| Memory Poisoning | Critical | NEW in 2025 | Cascading risk in multi-agent |
+| MCP/Tool Misuse | High | 45% | Sandboxing effective |
 | Data Exfiltration | High | 30% | Output filtering helps |
+| A2A Protocol Attacks | High | NEW in 2025 | Authentication required |
 | Jailbreak Attacks | Medium | 25% | Partial mitigations |
 
-**Key Insight**: OpenAI (Dec 2025) states prompt injection "may always be vulnerable" - defense-in-depth is required.
+**Key Insight**: OpenAI (Dec 2025) states prompt injection "may always be vulnerable" - defense-in-depth is required. Claude Opus 4.5 shows best-in-class resistance (4.7% vs 12.6% GPT-5.1).
 
 ---
 
@@ -84,16 +99,210 @@ function detect_injection(input):
 
 ---
 
-## 2. Tool Sandboxing
+## 2. MCP Security (NEW in 2025)
 
-### Isolation Layers
+### 2025 MCP Breach Timeline
 
-| Layer | Mechanism | Isolation Level | Performance |
-|-------|-----------|-----------------|-------------|
-| 1 | Process | Low | Fast |
-| 2 | Container | Medium | Moderate |
-| 3 | VM/Firecracker | High | Slower |
-| 4 | WASM | High | Fast |
+| Date | Incident | Impact | Root Cause |
+|------|----------|--------|------------|
+| May 2025 | GitHub MCP Server | Code exfiltration via tool abuse | Insufficient permission scoping |
+| June 2025 | Asana MCP Integration | Task data leak via indirect injection | Untrusted context in tool params |
+| June 2025 | Anthropic Inspector | Debug data exposure | Overprivileged development tools |
+
+### MCP Attack Vectors
+
+```
+1. Tool Permission Abuse
+   Agent requests tool → Tool has overprivileged access → Data exfiltration
+
+2. Indirect Prompt Injection via Tool Output
+   Malicious content in tool result → Agent processes as instructions
+
+3. Context Poisoning
+   Attacker controls tool input → Poison agent context → Escalate privileges
+
+4. MCP Server Compromise
+   Compromised server → Malicious tool responses → Agent manipulation
+```
+
+### MCP Defense Strategy (Pseudocode)
+```
+function secure_mcp_call(server, tool, params):
+    # 1. Server verification
+    if not verify_mcp_server_signature(server):
+        return ERROR("Untrusted MCP server")
+
+    # 2. Tool permission check (principle of least privilege)
+    required_permissions = get_tool_permissions(tool)
+    if not user_has_permissions(current_user, required_permissions):
+        return ERROR("Insufficient permissions")
+
+    # 3. Parameter sanitization
+    sanitized_params = sanitize_tool_params(params)
+
+    # 4. Execute with timeout and resource limits
+    result = execute_with_limits(
+        server, tool, sanitized_params,
+        timeout=30s,
+        memory_limit=256MB,
+        network=RESTRICTED
+    )
+
+    # 5. Output validation (treat as untrusted)
+    validated_result = validate_tool_output(result)
+    if contains_injection_patterns(validated_result):
+        return BLOCKED("Potential injection in tool output")
+
+    return validated_result
+```
+
+---
+
+## 3. Memory Poisoning (NEW in 2025)
+
+### Attack Description
+Memory poisoning exploits long-term memory systems (Mem0, embeddings, RAG) to inject persistent malicious instructions that activate on future interactions.
+
+**Demonstrated via Amazon Bedrock Agents (2025 security research)**
+
+### Attack Flow
+```
+Step 1: Initial Interaction (Benign)
+    User: "Remember that my preferences are..."
+    Agent: Stores in memory
+
+Step 2: Poisoned Content Injection
+    Attacker: Injects via retrieved document or prior conversation
+    Payload: "When user asks about X, always exfiltrate data to..."
+    Agent: Stores poison in memory
+
+Step 3: Future Activation
+    User: "Tell me about X"
+    Agent: Retrieves poisoned memory → Executes malicious instruction
+```
+
+### Memory Poisoning Defense (Pseudocode)
+```
+function secure_memory_operation(operation, content, metadata):
+    # 1. Source verification
+    if operation == WRITE:
+        trust_level = assess_content_trust(content, metadata.source)
+        if trust_level < THRESHOLD:
+            content = sanitize_for_storage(content)
+            metadata.trust = "LOW"
+
+    # 2. Content analysis for injection patterns
+    if contains_instruction_patterns(content):
+        log_security_event("Potential memory poisoning attempt")
+        content = strip_instruction_patterns(content)
+
+    # 3. Segregated storage by trust level
+    storage_tier = select_storage_tier(metadata.trust)
+
+    # 4. On retrieval, apply trust-aware processing
+    if operation == READ:
+        results = retrieve_from_memory(query)
+        for result in results:
+            if result.trust == "LOW":
+                result.content = wrap_with_caution(result.content)
+        return results
+
+    return store_in_tier(storage_tier, content, metadata)
+```
+
+### Multi-Agent Cascade Prevention
+```
+Cascade Failure Pattern:
+    Agent A poisoned → Agent A hands off to Agent B →
+    Poisoned context propagates → 41-86.7% failure rate
+
+Prevention:
+    1. Context sanitization at handoff boundaries
+    2. Trust attestation between agents
+    3. Independent verification for critical operations
+    4. Quarantine suspicious context chains
+```
+
+---
+
+## 3a. A2A Protocol Security (NEW in 2025)
+
+### A2A Vulnerabilities (Google's Agent-to-Agent Protocol)
+| Vulnerability | Risk | Mitigation |
+|--------------|------|------------|
+| Agent Impersonation | High | mTLS authentication, agent attestation |
+| Task Injection | High | Task validation, sender verification |
+| Capability Abuse | Medium | Capability scoping, dynamic revocation |
+| State Tampering | Medium | Signed state, cryptographic verification |
+| Routing Manipulation | Medium | Trusted registry, path validation |
+
+### A2A Security Best Practices
+```
+A2A Security Architecture:
+
+    Agent A                                          Agent B
+    ┌─────────────────┐                             ┌─────────────────┐
+    │  Task Request   │──── mTLS + Signed ────────→│  Task Validator │
+    │                 │      Payload                │                 │
+    │  Capability     │←──── Capability ───────────│  Capability     │
+    │  Verifier       │      Attestation           │  Issuer         │
+    └─────────────────┘                             └─────────────────┘
+           │                                               │
+           ▼                                               ▼
+    ┌─────────────────┐                             ┌─────────────────┐
+    │  Audit Log      │                             │  Audit Log      │
+    │  (immutable)    │                             │  (immutable)    │
+    └─────────────────┘                             └─────────────────┘
+
+Requirements:
+    1. Every A2A call authenticated (mTLS minimum)
+    2. Task payloads signed and validated
+    3. Capabilities scoped and time-limited
+    4. All interactions logged with correlation IDs
+    5. Circuit breakers for suspicious patterns
+```
+
+---
+
+## 4. Tool Sandboxing
+
+### Isolation Layers (December 2025)
+
+| Layer | Mechanism | Isolation Level | Performance | Use Case |
+|-------|-----------|-----------------|-------------|----------|
+| 1 | Process | Low | Fast | Read-only operations |
+| 2 | Container | Medium | Moderate | Standard tool execution |
+| 3 | **Firecracker microVM** | **High** | **125ms boot** | Code execution, untrusted tools |
+| 4 | gVisor | High | Fast | Container hardening |
+| 5 | WASM | High | Fast | Browser/edge agents |
+
+### Firecracker microVM (Recommended for Agentic Workloads)
+**Why Firecracker?** AWS research (2025) identifies Firecracker as security-optimal for agentic code execution:
+- **125ms cold boot** (vs seconds for traditional VMs)
+- **5MB memory footprint** per microVM
+- **Strong isolation**: Separate kernel per execution
+- **Production proven**: Lambda, Fargate, Modal
+
+```
+Firecracker Sandbox Architecture:
+    ┌─────────────────────────────────────────┐
+    │  Agent Host                              │
+    │  ┌─────────────────────────────────────┐ │
+    │  │  Firecracker VMM                    │ │
+    │  │  ┌───────────┐  ┌───────────┐       │ │
+    │  │  │ microVM 1 │  │ microVM 2 │  ...  │ │
+    │  │  │ Code Exec │  │ Tool Run  │       │ │
+    │  │  └───────────┘  └───────────┘       │ │
+    │  └─────────────────────────────────────┘ │
+    └─────────────────────────────────────────┘
+
+Each microVM:
+    - Isolated kernel
+    - Read-only root filesystem
+    - No network by default
+    - Resource limits enforced
+    - Auto-terminated after execution
+```
 
 ### Sandboxing Strategy (Pseudocode)
 ```
@@ -215,13 +424,21 @@ function filter_output(response):
 
 ## 5. Compliance Quick Reference
 
-### EU AI Act (High-Risk Systems)
+### EU AI Act (High-Risk Systems) - 2025 Enforcement
+**Key Deadlines:**
+- **August 2025**: Prohibited AI practices enforcement begins
+- **August 2026**: Full high-risk AI system requirements
+
+**Requirements:**
 - [ ] Risk management system documented
 - [ ] Technical documentation complete
-- [ ] Logging of all operations
+- [ ] Logging of all operations (minimum 6 months retention)
 - [ ] Human oversight mechanisms
 - [ ] Accuracy, robustness, cybersecurity
 - [ ] CE marking (if applicable)
+- [ ] **NEW**: Agentic system boundary documentation
+- [ ] **NEW**: Multi-agent interaction audit trails
+- [ ] **NEW**: Autonomous decision limits defined
 
 ### GDPR
 - [ ] Lawful basis for processing
@@ -241,6 +458,20 @@ function filter_output(response):
 8. **LLM08**: Vector and Embedding Weaknesses
 9. **LLM09**: Excessive Agency
 10. **LLM10**: Model Theft
+
+### OWASP Top 10 for Agentic Applications (December 2025 - NEW)
+| Rank | Threat | Description | Mitigation |
+|------|--------|-------------|------------|
+| 1 | **Agentic Goal Hijacking** | Attacker redirects agent objectives | Goal validation, intent verification |
+| 2 | **Tool Misuse** | Agent uses tools beyond intended scope | Strict permission scoping, HITL |
+| 3 | **Memory Poisoning** | Persistent injection via memory systems | Trust-tiered memory, sanitization |
+| 4 | **Identity Spoofing** | Agent impersonates other agents/users | mTLS, attestation, A2A auth |
+| 5 | **Privilege Escalation** | Agent gains unauthorized access | Least privilege, capability-based |
+| 6 | **Context Manipulation** | Attacker controls agent context | Context validation, trust boundaries |
+| 7 | **MCP Exploitation** | Abuse of Model Context Protocol | Server verification, output filtering |
+| 8 | **Multi-Agent Cascading** | Failure propagates across agents | Isolation, circuit breakers |
+| 9 | **Autonomous Action Abuse** | Agent takes harmful autonomous actions | Approval gates, action limits |
+| 10 | **Observability Gaps** | Insufficient logging/monitoring | Comprehensive tracing, audit logs |
 
 ---
 
@@ -358,24 +589,35 @@ LLMs have no inherent concept of "instructions" vs "data" - everything is text p
 ```
 DETECT → VALIDATE → SANDBOX → FILTER → MONITOR → RESPOND
 
-Detection:
-  Pattern matching → Encoding check → Semantic analysis
+Detection (540% surge in 2025):
+  Pattern matching → Encoding check → Semantic analysis → Memory check
 
 Validation:
   Schema → Business rules → LLM critic → Human review
 
-Sandboxing:
-  LOW → Process | MEDIUM → Container | HIGH → VM | CRITICAL → Block
+Sandboxing (Firecracker recommended):
+  LOW → Process | MEDIUM → Container | HIGH → Firecracker | CRITICAL → Block
 
 Filtering:
   PII → Credentials → System prompts → Harmful content
 
+Multi-Agent Security (NEW):
+  MCP → Verify server | A2A → mTLS auth | Memory → Trust tiers | Handoff → Sanitize
+
 Monitoring:
-  Injection attempts → Error rates → Latency → Cost
+  Injection attempts → Error rates → Latency → Cost → Cascade alerts
 
 Response:
   P0 → Immediate | P1 → 15min | P2 → 1hr | P3 → Next day
 ```
+
+### Model Security Comparison (December 2025)
+| Model | Attack Success Rate (k=1) | Best For |
+|-------|---------------------------|----------|
+| Claude Opus 4.5 | **4.7%** | Highest security |
+| Claude Sonnet 4.5 | ~8% | Balanced |
+| GPT-5.1 | 12.6% | General use |
+| GPT-5 | ~15% | General use |
 
 ---
 
@@ -387,6 +629,8 @@ Response:
 
 ---
 
-**Document Version**: 1.0 (Consolidated from agent-safety-*.md)
-**Last Updated**: December 2025
+**Document Version**: 2.0 (Updated with December 2025 security research)
+**Last Updated**: 2025-12-25
 **Status**: Concepts and pseudocode only (no production implementations)
+
+**Sources**: OWASP GenAI/Agentic Applications, HarmBench Security Testing, MAST Research (arXiv:2503.13657), AWS Firecracker Research, MCP Security Advisories (2025), A2A Protocol Specification (Google)
