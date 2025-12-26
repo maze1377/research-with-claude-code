@@ -2,14 +2,18 @@
 
 **The definitive professional reference for AI agent developers**
 
-Last Updated: 2025-12-26 (Phase 25) | 17 Documents | 100,000+ words | 102 Q&A Topics | 60+ Academic References
+Last Updated: 2025-12-26 (Phase 26) | 17 Documents | 100,000+ words | 102 Q&A Topics | 60+ Academic References
 
 ---
 
-## What's New (Phase 25)
+## What's New (Phase 26)
 
 | Addition | Location | Description |
 |----------|----------|-------------|
+| **RIPER Framework** | [developer-productivity-guide.md](developer-productivity-guide.md) §1 | Research→Innovate→Plan→Execute→Review for Cursor |
+| **Spec-Driven Development** | [developer-productivity-guide.md](developer-productivity-guide.md) §11 | SDD with GitHub Spec-Kit, Kiro, Tessl |
+| **Context Engineering** | [developer-productivity-guide.md](developer-productivity-guide.md) §12 | Token management, just-in-time retrieval |
+| **Team Workflows** | [developer-productivity-guide.md](developer-productivity-guide.md) §6 | Martin Fowler insights, reference anchoring |
 | **12-Factor Agents** | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) | Production-ready principles from HumanLayer |
 | **Decision Frameworks** | [topics.md](topics.md) Q82-Q87 | When to use agents, framework selection, autonomy levels |
 | **MCP & Claude SDK** | [topics.md](topics.md) Q88-Q92 | Anthropic ecosystem deep dive, skills, hooks |
@@ -47,6 +51,10 @@ Last Updated: 2025-12-26 (Phase 25) | 17 Documents | 100,000+ words | 102 Q&A To
 | **Write agent prompts** | [agent-prompting-guide.md](agent-prompting-guide.md) |
 | **Product strategy (PM)** | [product-strategy-guide.md](product-strategy-guide.md) |
 | **Use Cursor/Claude Code** | [developer-productivity-guide.md](developer-productivity-guide.md) |
+| **Learn RIPER workflow** | [developer-productivity-guide.md](developer-productivity-guide.md) → §1 RIPER |
+| **Use Spec-Driven Dev** | [developer-productivity-guide.md](developer-productivity-guide.md) → §11 SDD |
+| **Learn Context Engineering** | [developer-productivity-guide.md](developer-productivity-guide.md) → §12 |
+| **Set up team AI workflows** | [developer-productivity-guide.md](developer-productivity-guide.md) → §6 |
 | See latest 2025 updates | [2025-updates.md](2025-updates.md) |
 | **Build for robotics** | [topics.md](topics.md) → Q97 Embodied Agents |
 | **Deploy at edge** | [topics.md](topics.md) → Q86 Edge Deployment |
@@ -191,7 +199,7 @@ security-essentials.md               # Consolidated security guide
 | Document | Lines | Purpose |
 |----------|-------|---------|
 | [product-strategy-guide.md](product-strategy-guide.md) | **850+** | Build vs buy, ROI, team structure |
-| [developer-productivity-guide.md](developer-productivity-guide.md) | **950+** | Cursor, Claude Code, Windsurf best practices |
+| [developer-productivity-guide.md](developer-productivity-guide.md) | **2100+** | Cursor, Claude Code, Windsurf + RIPER, SDD, Context Engineering |
 
 ### 2025 Updates
 | Document | Lines | Purpose |
@@ -300,6 +308,37 @@ Browser automation→ Agent S (72.6% OSWorld - beats human!), Claude Computer Us
 2. Output filtering     → PII/credential redaction
 3. Tool sandboxing      → Process → Container → VM
 4. HITL approval        → Risk-based (LOW→AUTO, HIGH→BLOCK)
+```
+
+### RIPER Workflow (Cursor)
+```
+R: Research   → Understand codebase, NO code changes
+I: Innovate   → Brainstorm solutions, NO code changes
+P: Plan       → Document approach, NO code changes
+E: Execute    → Implement ONLY approved plan
+R: Review     → Validate results, NO new changes
+Key: ZERO UNAUTHORIZED CHANGES
+```
+
+### Spec-Driven Development
+```
+/specify  → Describe WHAT and WHY (user journeys)
+/plan     → Define tech stack and architecture
+/tasks    → Break into concrete work units
+/implement→ Execute with spec as guidance
+
+Tools: GitHub Spec-Kit, Kiro, Tessl
+```
+
+### Context Engineering
+```
+1. Minimal Context      → Smallest high-signal token set
+2. Right Altitude       → Specific yet flexible
+3. Structured Sections  → XML tags, Markdown headers
+4. Progressive Disclosure → Load incrementally
+5. Token Efficiency     → Every token earns its place
+
+Budget: 40-50% code, 10-15% context, 10-20% buffer
 ```
 
 ---

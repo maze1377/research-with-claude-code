@@ -2,7 +2,9 @@
 
 **Best practices for Cursor, Claude Code, Windsurf, and autonomous agents**
 
-**Last Updated:** 2025-12-26 | Version 1.0
+**Last Updated:** 2025-12-26 | Version 2.0
+
+**New in v2.0:** RIPER Framework, Spec-Driven Development, Context Engineering, Team Workflows from Martin Fowler
 
 ---
 
@@ -18,7 +20,9 @@
 8. [Performance Optimization](#7-performance-optimization)
 9. [Security Considerations](#8-security-considerations)
 10. [Common Pitfalls](#9-common-pitfalls)
-11. [Quick Reference](#10-quick-reference)
+11. [Spec-Driven Development (SDD)](#11-spec-driven-development-sdd)
+12. [Context Engineering](#12-context-engineering)
+13. [Quick Reference](#13-quick-reference)
 
 ---
 
@@ -306,6 +310,124 @@ cd ../feature-auth
 - Use for independent, parallelizable tasks
 - Merge completed worktrees promptly
 - Clean up unused worktrees regularly
+
+### RIPER Framework for Structured Development
+
+> **RIPER** = **R**esearch → **I**nnovate → **P**lan → **E**xecute → **R**eview
+
+The RIPER framework provides a disciplined workflow preventing unintended code modifications while maintaining perfect context across coding sessions.
+
+**The 5 RIPER Modes:**
+
+| Mode | Purpose | Output | Rule |
+|------|---------|--------|------|
+| **Research** | Understand existing code | Analysis only | NO code changes |
+| **Innovate** | Brainstorm solutions | Options list | NO code changes |
+| **Plan** | Design implementation | Detailed plan | NO code changes |
+| **Execute** | Implement changes | Working code | Only planned changes |
+| **Review** | Verify results | Validation report | NO new changes |
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RIPER WORKFLOW                                │
+│                                                                  │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐                    │
+│  │ RESEARCH │ → │ INNOVATE │ → │   PLAN   │                    │
+│  │          │   │          │   │          │                    │
+│  │ Explore  │   │ Generate │   │ Document │                    │
+│  │ codebase │   │ options  │   │ approach │                    │
+│  └──────────┘   └──────────┘   └──────────┘                    │
+│       │                              │                          │
+│       │                              ▼                          │
+│  ┌──────────┐               ┌──────────┐                       │
+│  │  REVIEW  │ ←──────────── │ EXECUTE  │                       │
+│  │          │               │          │                       │
+│  │ Validate │               │ Implement│                       │
+│  │ changes  │               │ plan     │                       │
+│  └──────────┘               └──────────┘                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Primary Directive:** ZERO UNAUTHORIZED CHANGES — The AI must never modify code outside the approved plan or protocol phase.
+
+**Setting Up RIPER:**
+
+1. **Add rules to Cursor:**
+```markdown
+<!-- .cursor/rules/riper.mdc -->
+---
+name: "RIPER Protocol"
+version: "1.0"
+globs: ["**/*"]
+alwaysInclude: true
+---
+
+# RIPER-5 Protocol
+
+## Modes
+You must always declare your current mode before any action:
+- MODE: RESEARCH - Gathering information, no code changes
+- MODE: INNOVATE - Brainstorming approaches, no code changes
+- MODE: PLAN - Creating implementation plan, no code changes
+- MODE: EXECUTE - Implementing approved plan only
+- MODE: REVIEW - Validating implementation, no changes
+
+## Rules
+1. Start every response with mode declaration
+2. Never skip modes (RESEARCH before INNOVATE before PLAN)
+3. No code modifications in Research/Innovate/Plan modes
+4. Execute mode: only implement what was approved in Plan
+5. Review mode: validate only, no new changes
+```
+
+2. **Initialize Memory Bank:**
+Create persistent context files:
+```
+.cursor/memory/
+├── activeContext.md    # Current session state
+├── progress.md         # Completed work tracking
+├── decisions.md        # Architectural decisions
+└── projectBrief.md     # Project overview
+```
+
+**Memory Bank Template:**
+```markdown
+<!-- .cursor/memory/activeContext.md -->
+# Active Context
+
+## Current Phase: [RESEARCH/INNOVATE/PLAN/EXECUTE/REVIEW]
+
+## Current Focus
+[What we're working on]
+
+## Open Questions
+- [ ] Question 1
+- [ ] Question 2
+
+## Recent Decisions
+- Decision 1: [Reasoning]
+
+## Session Notes
+[Learnings from current session]
+```
+
+**RIPER Best Practices:**
+- **Always complete Research** before proposing changes
+- **Document innovations** even if not selected
+- **Plan approval required** before any Execute mode
+- **Review every change** before marking complete
+- **Persist context** in Memory Bank files
+
+**When to Use RIPER:**
+| Scenario | Use RIPER? |
+|----------|------------|
+| Simple bug fix | Optional (can skip to Execute) |
+| New feature | Yes (full cycle) |
+| Refactoring | Yes (full cycle) |
+| Quick question | No (use Chat mode) |
+| Understanding code | RESEARCH mode only |
+
+**Source:** [CursorRIPER Framework](https://github.com/johnpeterman72/CursorRIPER), [Cursor Community Forum](https://forum.cursor.com/t/i-created-an-amazing-mode-called-riper-5-mode-fixes-claude-3-7-drastically/65516)
 
 ---
 
@@ -818,6 +940,223 @@ jobs:
 
 ## 6. Team Collaboration
 
+### AI Does NOT Replace Pair Programming
+
+> **"Framing coding assistants as pair programmers ignores one of the key benefits of pairing: to make the team, not just individual contributors, better."** — [Thoughtworks Technology Radar](https://www.thoughtworks.com/en-us/radar/techniques/replacing-pair-programming-with-ai)
+
+**What AI Assistants Provide:**
+- Getting unstuck on technical problems
+- Learning about new technologies
+- Onboarding to codebases
+- Accelerating tactical coding work
+
+**What AI Assistants DON'T Provide:**
+- Keeping work-in-progress low
+- Reducing handoffs and relearning
+- Enabling continuous integration through collaboration
+- Improving collective code ownership
+- Knowledge transfer between team members
+
+**The 2025 Shift: From "Vibe Coding" to "Context Engineering"**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                 AI CODING EVOLUTION (2025)                       │
+│                                                                  │
+│  Early 2025: VIBE CODING                                        │
+│  ├── "Just tell the AI what you want"                           │
+│  ├── Trial and error with prompts                               │
+│  └── 25% Y Combinator: 95% AI-generated code                   │
+│                                                                  │
+│  Late 2025: CONTEXT ENGINEERING                                  │
+│  ├── Systematic context management                              │
+│  ├── Spec-driven development                                    │
+│  └── Human developers remain absolutely critical                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Source:** [MIT Technology Review: From Vibe Coding to Context Engineering](https://www.technologyreview.com/2025/11/05/1127477/from-vibe-coding-to-context-engineering-2025-in-software-development/)
+
+### Reference Application Anchoring
+
+**Thoughtworks Practice:** Anchor coding agents to a reference application as contextual ground truth.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                REFERENCE APPLICATION PATTERN                     │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │              REFERENCE APPLICATION                         │  │
+│  │  A working implementation demonstrating:                   │  │
+│  │  • Architectural patterns                                  │  │
+│  │  • Coding standards                                        │  │
+│  │  • Integration patterns                                    │  │
+│  │  • Test structure                                          │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │              AI CODING AGENT                               │  │
+│  │  "Follow the patterns in the reference app when           │  │
+│  │   implementing new features in the target codebase"       │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │              TARGET CODEBASE                               │  │
+│  │  New code follows established patterns automatically       │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Implementation:**
+```markdown
+<!-- CLAUDE.md for reference anchoring -->
+## Reference Application
+
+When implementing new features, follow patterns from:
+- Reference app: /reference-app/
+- Key patterns to follow:
+  - API structure: /reference-app/src/api/
+  - Component structure: /reference-app/src/components/
+  - Test patterns: /reference-app/tests/
+
+## Pattern Requirements
+Always check reference app before implementing:
+1. How similar features are structured
+2. Error handling patterns used
+3. Test coverage expectations
+```
+
+**Source:** [Thoughtworks: Exploring GenAI](https://martinfowler.com/articles/exploring-gen-ai.html)
+
+### Multi-Agent Team Workflows
+
+**Team of Agents Pattern:**
+Use multiple specialized agents to reduce context burden on any single agent.
+
+| Agent | Responsibility | Context |
+|-------|---------------|---------|
+| **Research Agent** | Codebase exploration | File index, search tools |
+| **Implementation Agent** | Writing code | Spec + relevant files |
+| **Test Agent** | Validation | Test frameworks, coverage |
+| **Review Agent** | Code review | Standards, patterns |
+
+**Human-AI Pairing Best Practices:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│               HUMAN-AI COLLABORATION PATTERNS                    │
+│                                                                  │
+│  Pattern 1: PLAN → ACT → REFLECT                                 │
+│  ├── Human writes clear plan/spec                               │
+│  ├── AI implements according to plan                            │
+│  └── Human reviews, AI reflects on feedback                     │
+│                                                                  │
+│  Pattern 2: VISIBILITY + CONTROL                                 │
+│  ├── AI shows what it's doing at each step                      │
+│  ├── Human can interrupt and redirect                           │
+│  └── AI knows when/how to ask for help                          │
+│                                                                  │
+│  Pattern 3: SHARED KNOWLEDGE BASE                                │
+│  ├── Team standards in CLAUDE.md/.mdc                           │
+│  ├── Coding conventions documented                              │
+│  └── Common troubleshooting steps captured                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Productivity Metrics (2025 Research):**
+
+| Metric | Impact | Source |
+|--------|--------|--------|
+| Routine coding tasks | +30-50% productivity | Industry Research |
+| PR cycle time | -45% reduction | UiPath |
+| Complex problem-solving | Variable | Thoughtworks |
+| Code quality without oversight | Potentially negative | Multiple |
+
+### Treating AI as Junior Developer
+
+> **"No matter how advanced your coding agent is, always perform a human review. Treat the agent as a capable junior developer—efficient, but always in need of supervision and validation."** — Industry Best Practice
+
+**Junior Developer Mental Model:**
+- **Capable:** Can write functional code
+- **Fast:** Completes tasks quickly
+- **Eager:** Will attempt anything asked
+- **Needs guidance:** May miss edge cases, security issues
+- **Requires review:** All output needs verification
+
+**Review Checklist for AI-Generated Code:**
+```markdown
+## AI Code Review Checklist
+
+### Logic & Correctness
+- [ ] Does the code do what was requested?
+- [ ] Are edge cases handled?
+- [ ] Is error handling appropriate?
+
+### Security
+- [ ] No injection vulnerabilities?
+- [ ] Secrets handled properly?
+- [ ] Input validation present?
+
+### Architecture
+- [ ] Follows project patterns?
+- [ ] No unnecessary complexity?
+- [ ] Appropriate abstractions?
+
+### Testing
+- [ ] Tests cover happy path?
+- [ ] Tests cover error cases?
+- [ ] Integration tests if needed?
+```
+
+### Knowledge Sharing with AI Tools
+
+**Weekly AI Tools Sync (15 min):**
+1. What prompts worked well this week?
+2. What AI mistakes did we catch?
+3. New patterns to share?
+4. Updates to shared CLAUDE.md/.mdc?
+
+**Shared Prompt Library:**
+
+```
+.team/prompts/
+├── new-endpoint.md      # Standard API endpoint pattern
+├── component.md         # React component template
+├── migration.md         # Database migration pattern
+├── security-review.md   # Security audit checklist
+└── refactor.md          # Refactoring workflow
+```
+
+**Onboarding New Team Members:**
+
+```markdown
+## AI Tools Onboarding Checklist
+
+### Day 1
+- [ ] Access to approved AI tools (Cursor/Claude Code/Copilot)
+- [ ] Walk through CLAUDE.md / .mdc files
+- [ ] Review team prompt library
+
+### Week 1
+- [ ] Shadow experienced AI user
+- [ ] Complete L1 training (basics)
+- [ ] First AI-assisted PR (with review)
+
+### Week 2-4
+- [ ] L2 training (intermediate)
+- [ ] Independent AI usage with review
+- [ ] Contribute to shared prompt library
+
+### Month 2+
+- [ ] L3 training (advanced)
+- [ ] Help onboard next team member
+- [ ] Propose improvements to AI workflows
+```
+
+**Source:** [Thoughtworks: AI-Assisted Coding](https://www.thoughtworks.com/en-us/insights/podcasts/technology-podcasts/ai-assisted-coding-experiences-perspectives), [UiPath: Best Practices](https://www.uipath.com/blog/ai/agent-builder-best-practices)
+
 ### AI Tool Governance Policy Template
 
 ```markdown
@@ -1204,7 +1543,461 @@ const costTracker = {
 
 ---
 
-## 10. Quick Reference
+## 11. Spec-Driven Development (SDD)
+
+> **"Spec-driven development may not have the visibility of a term like vibe coding, but it's nevertheless one of the most important practices to emerge in 2025."** — [Thoughtworks](https://www.thoughtworks.com/en-ca/insights/blog/agile-engineering-practices/spec-driven-development-unpacking-2025-new-engineering-practices)
+
+### What is Spec-Driven Development?
+
+**Definition:** A development paradigm using well-crafted software specifications as prompts for AI coding agents to generate executable code.
+
+**Why SDD Emerged:**
+- Early AI tools (GitHub Copilot) generated only snippets
+- "Vibe coding" produced unmaintainable, defective code
+- Research showed specs + chain-of-thought = higher quality code
+- 25% of Y Combinator Winter 2025 companies have 95% AI-generated codebases
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│            VIBE CODING vs SPEC-DRIVEN DEVELOPMENT                │
+│                                                                  │
+│  VIBE CODING                    SPEC-DRIVEN                      │
+│  ────────────                   ──────────                       │
+│  "Just make it work"      →     Clear specifications             │
+│  Trial and error          →     Requirements first               │
+│  Tech debt accumulates    →     Maintainable architecture        │
+│  AI guesses intent        →     AI follows explicit contract     │
+│  Inconsistent quality     →     Predictable outcomes             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### SDD Three Maturity Levels
+
+| Level | Description | Spec Lifecycle | Best For |
+|-------|-------------|----------------|----------|
+| **Spec-First** | Write spec before coding | Discarded after implementation | Small features |
+| **Spec-Anchored** | Retain and evolve specs | Maintained during maintenance | Features needing updates |
+| **Spec-as-Source** | Specs are primary artifact | Code regenerated from spec | Maximum consistency |
+
+### SDD Tools Comparison (December 2025)
+
+| Tool | Creator | Approach | Complexity | Best For |
+|------|---------|----------|------------|----------|
+| **[Kiro](https://kiro.dev)** | AWS/Amazon | Lightweight, 3-step | Low | Individual developers |
+| **[Spec-Kit](https://github.com/github/spec-kit)** | GitHub | Constitution-based | Medium | Teams with standards |
+| **[Tessl](https://tessl.io)** | Tessl | Spec-as-source | High | Full regeneration |
+
+### GitHub Spec-Kit Workflow
+
+**Installation:**
+```bash
+uvx --from git+https://github.com/github/spec-kit.git specify init <PROJECT_NAME>
+```
+
+**The 4 Phases:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SPEC-KIT WORKFLOW                             │
+│                                                                  │
+│  Phase 1: /specify                                               │
+│  ├── Describe WHAT and WHY (not technical details)              │
+│  ├── AI generates user journeys and success metrics             │
+│  └── Output: Detailed specification document                     │
+│                                                                  │
+│  Phase 2: /plan                                                  │
+│  ├── Define tech stack, architecture, constraints               │
+│  ├── AI creates comprehensive technical plan                     │
+│  └── Output: Implementation plan with architecture               │
+│                                                                  │
+│  Phase 3: /tasks                                                 │
+│  ├── AI breaks spec+plan into concrete work units               │
+│  ├── Each task: specific, reviewable, focused                   │
+│  └── Output: Actionable task list                               │
+│                                                                  │
+│  Phase 4: /implement                                             │
+│  ├── AI tackles tasks with spec/plan as guidance                │
+│  ├── Focused changes, not thousand-line dumps                   │
+│  └── Output: Working code                                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Spec-Kit Constitution (Team Standards):**
+```markdown
+<!-- .spec/constitution.md -->
+# Engineering Standards
+
+## Architecture
+- Prefer composition over inheritance
+- All external calls wrapped in service classes
+- No business logic in controllers
+
+## Security
+- Input validation on all API endpoints
+- SQL injection prevention via parameterized queries
+- No secrets in code
+
+## Testing
+- Minimum 80% coverage for new code
+- Integration tests for all API endpoints
+- No mocking of core business logic
+
+## Code Style
+- Functions under 50 lines
+- Classes under 300 lines
+- Explicit typing on all public APIs
+```
+
+### Kiro Workflow (Lightweight SDD)
+
+**Three Documents:**
+
+```
+.kiro/
+├── requirements.md    # User stories: "As a... I want... So that..."
+├── design.md          # Architecture, data flow, error handling
+└── tasks.md           # TODOs linked to requirement numbers
+```
+
+**Requirements Format (Given/When/Then):**
+```markdown
+## Feature: User Authentication
+
+### Story 1: Login
+As a registered user
+I want to log in with my credentials
+So that I can access my account
+
+#### Acceptance Criteria
+**GIVEN** a registered user with valid credentials
+**WHEN** they submit the login form
+**THEN** they receive a JWT token AND are redirected to dashboard
+
+**GIVEN** a user with invalid credentials
+**WHEN** they submit the login form
+**THEN** they see an error message AND no token is issued
+```
+
+### SDD with Claude Code
+
+**Setup for Claude Code:**
+```markdown
+<!-- CLAUDE.md addition -->
+## Development Methodology: Spec-Driven Development
+
+### Workflow
+1. Always request/create specs BEFORE implementing
+2. Use Requirements → Design → Tasks → Implementation flow
+3. Validate each phase before proceeding
+
+### Spec Location
+- Requirements: docs/specs/[feature]-requirements.md
+- Design: docs/specs/[feature]-design.md
+- Tasks: docs/specs/[feature]-tasks.md
+
+### Spec Template
+When creating a new feature:
+1. Generate requirements with Given/When/Then scenarios
+2. Design architecture including error handling and tests
+3. Break into focused tasks (1-2 hours each)
+4. Implement one task at a time with verification
+```
+
+**Custom Command for SDD:**
+```markdown
+<!-- .claude/commands/spec.md -->
+# Create Feature Specification
+
+Generate a complete specification for: $ARGUMENTS
+
+## Requirements Document
+- User stories with acceptance criteria
+- Given/When/Then scenarios for each story
+- Edge cases and error conditions
+
+## Design Document
+- Component architecture
+- Data flow diagram (as ASCII)
+- API contracts
+- Error handling strategy
+- Test approach
+
+## Task Breakdown
+- Numbered tasks linked to requirements
+- Estimated complexity (S/M/L)
+- Dependencies between tasks
+
+Save to: docs/specs/$ARGUMENTS/
+```
+
+### SDD Best Practices
+
+**From [Martin Fowler's Research](https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html):**
+
+| Practice | Guidance |
+|----------|----------|
+| **Scalability** | Match workflow complexity to task size |
+| **Review efficiency** | Prefer readable specs over verbose docs |
+| **Iteration** | Balance upfront spec with small increments |
+| **Functional-technical separation** | Clear boundaries in specs |
+| **Non-determinism** | Iterate specs when AI output varies |
+
+**What Makes Good Specs:**
+- Use domain language (not tech jargon)
+- Given/When/Then for clear scenarios
+- Complete but concise
+- Machine-readable structure
+
+**When to Use SDD:**
+
+| Scenario | Use SDD? | Approach |
+|----------|----------|----------|
+| New feature | Yes | Full spec cycle |
+| Bug fix | Optional | Minimal spec |
+| Refactoring | Yes | Design-focused spec |
+| Quick prototype | No | Vibe code, then spec |
+| Legacy modernization | Yes | Capture business logic |
+
+**Source:** [GitHub Spec-Kit](https://github.com/github/spec-kit), [Thoughtworks SDD Guide](https://www.thoughtworks.com/en-ca/insights/blog/agile-engineering-practices/spec-driven-development-unpacking-2025-new-engineering-practices), [Martin Fowler: Exploring GenAI](https://martinfowler.com/articles/exploring-gen-ai.html)
+
+---
+
+## 12. Context Engineering
+
+> **"Context engineering is the new backbone of scalable AI systems."** — [Anthropic Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+
+### What is Context Engineering?
+
+**Definition:** The set of strategies for curating and maintaining the optimal set of tokens (information) during LLM inference.
+
+**The Evolution:**
+```
+Prompt Engineering (2022-2024)
+├── Focus: Writing better instructions
+└── Scope: Single prompts
+
+Context Engineering (2025+)
+├── Focus: Managing entire context state
+└── Scope: All information reaching the model
+```
+
+**The Problem Context Engineering Solves:**
+- Agents on long tasks accumulate history, tool outputs, documents
+- Context windows have finite "attention budgets"
+- Performance degrades as context expands ("context rot")
+- Transformers struggle: n² pairwise token relationships
+
+### Context Engineering Principles
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           CONTEXT ENGINEERING CORE PRINCIPLES                    │
+│                                                                  │
+│  1. MINIMAL CONTEXT                                              │
+│     └── Smallest collection of high-signal tokens                │
+│                                                                  │
+│  2. RIGHT ALTITUDE                                               │
+│     └── Specific enough to guide, flexible enough to adapt       │
+│                                                                  │
+│  3. STRUCTURED SECTIONS                                          │
+│     └── XML tags or Markdown headers for organization            │
+│                                                                  │
+│  4. PROGRESSIVE DISCLOSURE                                       │
+│     └── Load information incrementally, not all upfront          │
+│                                                                  │
+│  5. TOKEN EFFICIENCY                                             │
+│     └── Every token must earn its place                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Just-in-Time Context Retrieval
+
+**Instead of:** Pre-loading all potentially relevant data
+
+**Do:** Maintain lightweight identifiers and load dynamically
+
+```python
+# Anti-pattern: Loading everything upfront
+context = load_entire_codebase()  # 500K tokens
+response = llm.invoke(context + query)
+
+# Pattern: Just-in-time retrieval
+file_index = build_file_index()  # Lightweight paths/summaries
+relevant_files = llm.identify_relevant(file_index, query)
+context = load_specific_files(relevant_files)  # 10K tokens
+response = llm.invoke(context + query)
+```
+
+**Benefits:**
+- Reduces token waste
+- Enables progressive discovery
+- Uses metadata signals (folder hierarchies, naming conventions)
+
+**Trade-offs:**
+- Runtime exploration is slower than pre-computed retrieval
+- Requires thoughtful tool design
+
+**Hybrid Approach (Recommended):**
+```
+CLAUDE.md → Static context (always loaded)
+    +
+glob/grep → Just-in-time file access (loaded when needed)
+```
+
+### Structured Context Patterns for Long Tasks
+
+**Pattern 1: Compaction**
+
+Summarize conversation history when approaching limits:
+
+```markdown
+<!-- Before compaction: 50K tokens -->
+[Full conversation history with all tool outputs]
+
+<!-- After compaction: 5K tokens -->
+## Session Summary
+- Implemented user authentication (JWT-based)
+- Created login/logout endpoints
+- Added rate limiting middleware
+- Remaining: Password reset feature
+
+## Key Decisions
+- Chose bcrypt for password hashing (security)
+- 24-hour token expiry (UX/security balance)
+
+## Current State
+- Working: /login, /logout, /profile
+- Pending: /reset-password, /change-password
+```
+
+**Pattern 2: Structured Note-Taking**
+
+Maintain persistent notes outside context window:
+
+```markdown
+<!-- .claude/session-notes.md -->
+# Project Notes
+
+## Architecture Decisions
+- 2025-12-26: Chose PostgreSQL over MongoDB (ACID compliance needed)
+- 2025-12-26: Redis for session cache (speed priority)
+
+## Implementation Progress
+- [x] Database schema
+- [x] Auth endpoints
+- [ ] Email service integration
+
+## Blockers
+- Email provider API key not configured
+```
+
+**Pattern 3: Sub-Agent Architecture**
+
+Delegate focused tasks to specialized sub-agents:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SUB-AGENT ARCHITECTURE                        │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                   ORCHESTRATOR AGENT                      │   │
+│  │  Clean context window, coordinates sub-agents             │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│           │              │              │                        │
+│           ▼              ▼              ▼                        │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐                │
+│  │  RESEARCH  │  │  IMPLEMENT │  │   TEST     │                │
+│  │  SUB-AGENT │  │  SUB-AGENT │  │  SUB-AGENT │                │
+│  │            │  │            │  │            │                │
+│  │  Explores  │  │  Writes    │  │  Validates │                │
+│  │  codebase  │  │  code      │  │  changes   │                │
+│  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘                │
+│        │               │               │                        │
+│        └───────────────┼───────────────┘                        │
+│                        ▼                                        │
+│            Returns 1-2K token summary                           │
+│            (not full exploration history)                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Sub-agent returns:** Condensed summary (1,000-2,000 tokens), not full exploration
+
+### Context Strategy Selection
+
+| Task Characteristic | Best Strategy |
+|---------------------|---------------|
+| Extensive back-and-forth | Compaction |
+| Iterative development with milestones | Note-taking |
+| Complex research + parallel exploration | Multi-agent |
+| Quick lookup, known location | Just-in-time |
+| Always-needed project info | Static (CLAUDE.md) |
+
+### Tool Design for Context Efficiency
+
+**Anti-Pattern: Bloated Tool Results**
+```python
+# Bad: Returns entire file
+def read_file(path):
+    return open(path).read()  # Could be 10K+ tokens
+```
+
+**Pattern: Efficient Tool Results**
+```python
+# Good: Returns targeted content
+def read_file(path, start_line=None, end_line=None, search=None):
+    content = open(path).readlines()
+    if search:
+        return [l for l in content if search in l]
+    if start_line and end_line:
+        return content[start_line:end_line]
+    return content[:100]  # Default: first 100 lines
+```
+
+### Observation Masking
+
+Clear old tool results to save tokens:
+
+```
+Before: "File auth.ts was read. Contents: [2000 tokens of code]..."
+After:  "File auth.ts was read at step 47"
+```
+
+**Implementation:**
+```python
+def mask_old_observations(conversation, keep_last_n=3):
+    """Replace old tool outputs with references."""
+    for i, msg in enumerate(conversation[:-keep_last_n]):
+        if msg.role == "tool_result":
+            msg.content = f"[Tool output from step {i}]"
+    return conversation
+```
+
+### Context Engineering for Teams
+
+**Shared Context Files:**
+- CLAUDE.md / .mdc rules → Team standards
+- .spec/constitution.md → Architectural principles
+- docs/decisions/ → ADRs (Architecture Decision Records)
+
+**Context Budget Allocation:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│            RECOMMENDED TOKEN BUDGET (200K window)                │
+│                                                                  │
+│  System Prompt + Rules     │██████████████░░░░░│  10-15%        │
+│  Project Context           │█████████░░░░░░░░░░│  5-10%         │
+│  Current Task Spec         │██████████░░░░░░░░░│  5-10%         │
+│  Relevant Code             │███████████████████│  40-50%        │
+│  Conversation History      │████████░░░░░░░░░░░│  10-15%        │
+│  Working Memory (buffer)   │██████░░░░░░░░░░░░░│  10-20%        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Source:** [Anthropic: Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), [Manus: Context Engineering Lessons](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus)
+
+---
+
+## 13. Quick Reference
 
 ### Tool Selection
 
@@ -1233,6 +2026,26 @@ const costTracker = {
 | Custom command | /[command] |
 | Clear context | /clear |
 
+### Development Workflows
+
+**RIPER Framework:**
+```
+Research → Innovate → Plan → Execute → Review
+Key: ZERO UNAUTHORIZED CHANGES
+```
+
+**Spec-Driven Development:**
+```
+Specify → Plan → Tasks → Implement
+Tools: GitHub Spec-Kit, Kiro, Tessl
+```
+
+**Context Engineering:**
+```
+Minimal Context + Just-in-Time Retrieval + Compaction
+Budget: 40-50% for relevant code, 10-15% for context
+```
+
 ### Configuration Quick Start
 
 **Cursor:**
@@ -1250,6 +2063,11 @@ mkdir -p .claude/commands
 **Windsurf:**
 ```bash
 touch .codeiumignore
+```
+
+**Spec-Kit:**
+```bash
+uvx --from git+https://github.com/github/spec-kit.git specify init <PROJECT>
 ```
 
 ### Testing Strategy
