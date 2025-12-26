@@ -621,6 +621,298 @@ Response:
 
 ---
 
+## 10. Multi-Tenant Agent Security
+
+### The Rule of Two (Meta Security Framework)
+
+**Core Principle:** An AI agent session must satisfy **at most two** of these three properties:
+
+| Property | Description | Examples |
+|----------|-------------|----------|
+| **[A] Untrusted Inputs** | Processing web content, user emails, arbitrary data | Web scraping, email reading, document parsing |
+| **[B] Sensitive Data Access** | Access to private info, credentials, internal systems | Email access, database queries, user preferences |
+| **[C] External Actions** | Sending emails, API calls, state changes | Sending messages, making purchases, file uploads |
+
+```
+                    ┌─────────────────────────────────────┐
+                    │          RULE OF TWO               │
+                    │   (Pick at most 2 of 3)            │
+                    └─────────────────────────────────────┘
+
+    [A] Untrusted          [B] Sensitive          [C] External
+        Inputs                 Data                  Actions
+           │                     │                      │
+           └──────────┬──────────┴──────────┬──────────┘
+                      │                      │
+              ┌───────▼───────┐      ┌───────▼───────┐
+              │   A + B       │      │   B + C       │
+              │ (No external  │      │ (No untrusted │
+              │  actions)     │      │  inputs)      │
+              │ Human approval│      │ Curated data  │
+              │ for sends     │      │ only          │
+              └───────────────┘      └───────────────┘
+                      │
+              ┌───────▼───────┐
+              │   A + C       │
+              │ (No sensitive │
+              │  data access) │
+              │ Sandboxed     │
+              │ browser       │
+              └───────────────┘
+```
+
+**Application Examples:**
+
+| Agent Type | Allowed | Constrained | Implementation |
+|------------|---------|-------------|----------------|
+| Email Assistant | [A], [B] | [C] limited | Human approval for all sends |
+| Travel Booking | [A], [B] | [C] limited | Trusted URLs only, approval for purchases |
+| Web Browser | [A], [C] | [B] removed | Sandboxed, no session data access |
+| Internal Data | [B], [C] | [A] filtered | Author-verified inputs only |
+
+```python
+class RuleOfTwoEnforcer:
+    """Enforce Rule of Two for AI agent sessions."""
+
+    def __init__(self):
+        self.properties = {
+            "untrusted_inputs": False,
+            "sensitive_data": False,
+            "external_actions": False
+        }
+
+    def request_capability(self, capability: str) -> bool:
+        """Grant capability only if Rule of Two is satisfied."""
+        # Count current active properties
+        active_count = sum(self.properties.values())
+
+        # Already have 2 properties - deny new capability
+        if active_count >= 2 and not self.properties.get(capability, False):
+            return False
+
+        self.properties[capability] = True
+        return True
+
+    def enable_external_actions(self) -> bool:
+        """Enable external actions with appropriate constraints."""
+        if self.properties["untrusted_inputs"] and self.properties["sensitive_data"]:
+            # Have A+B, can't add C without removing one
+            return self.request_human_approval_mode()
+
+        return self.request_capability("external_actions")
+
+    def request_human_approval_mode(self):
+        """When all 3 needed, require human approval for [C]."""
+        self.human_approval_required = True
+        return True  # Allow with HITL constraint
+```
+
+---
+
+### Multi-Tenant Isolation Patterns
+
+**Architecture Options:**
+
+| Pattern | Isolation Level | Cost | Best For |
+|---------|-----------------|------|----------|
+| **Shared Pool** | Logical (tenant IDs) | Low | Low-risk, high-volume |
+| **Shared + Partitioned DB** | Data isolation | Medium | Most SaaS agents |
+| **Dedicated Instances** | Compute isolation | High | Regulated industries |
+| **Fully Siloed** | Infrastructure isolation | Highest | Financial, healthcare |
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    MULTI-TENANT ARCHITECTURE                    │
+├─────────────────────────────────────────────────────────────────┤
+│  API Gateway (Rate Limiting, Tenant Routing)                    │
+├────────────────────┬────────────────────┬───────────────────────┤
+│   Tenant A         │    Tenant B        │    Tenant C           │
+├────────────────────┼────────────────────┼───────────────────────┤
+│ ┌────────────────┐ │ ┌────────────────┐ │ ┌────────────────────┐│
+│ │ Prompt Config  │ │ │ Prompt Config  │ │ │ Prompt Config      ││
+│ │ tenant_a.yaml  │ │ │ tenant_b.yaml  │ │ │ tenant_c.yaml      ││
+│ └────────────────┘ │ └────────────────┘ │ └────────────────────┘│
+│ ┌────────────────┐ │ ┌────────────────┐ │ ┌────────────────────┐│
+│ │ Tool Configs   │ │ │ Tool Configs   │ │ │ Tool Configs       ││
+│ │ CRM: Salesforce│ │ │ CRM: HubSpot   │ │ │ CRM: Custom API    ││
+│ └────────────────┘ │ └────────────────┘ │ └────────────────────┘│
+│ ┌────────────────┐ │ ┌────────────────┐ │ ┌────────────────────┐│
+│ │ Knowledge Base │ │ │ Knowledge Base │ │ │ Knowledge Base     ││
+│ │ vector_idx_a   │ │ │ vector_idx_b   │ │ │ vector_idx_c       ││
+│ └────────────────┘ │ └────────────────┘ │ └────────────────────┘│
+├────────────────────┴────────────────────┴───────────────────────┤
+│              SHARED INFRASTRUCTURE LAYER                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
+│  │ LLM Inference│  │ Orchestrator │  │ Observability Stack   │  │
+│  │ (Shared GPU) │  │ (Kubernetes) │  │ (Tenant-tagged logs)  │  │
+│  └──────────────┘  └──────────────┘  └───────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Tenant Isolation Implementation:**
+
+```python
+class TenantIsolatedAgent:
+    """Agent with strict tenant isolation."""
+
+    def __init__(self, tenant_id: str):
+        self.tenant_id = tenant_id
+        self.config = self.load_tenant_config(tenant_id)
+
+    def load_tenant_config(self, tenant_id: str):
+        """Load tenant-specific configuration."""
+        return {
+            "prompt_template": self.db.get(f"prompts/{tenant_id}"),
+            "tools": self.filter_tools(tenant_id),
+            "knowledge_base": f"vector_index_{tenant_id}",
+            "memory_namespace": f"memory/{tenant_id}",
+            "rate_limits": self.get_tenant_limits(tenant_id),
+            "data_retention": self.get_retention_policy(tenant_id)
+        }
+
+    def invoke(self, query: str, context: dict):
+        """Process query with tenant isolation."""
+        # Validate tenant context
+        if context.get("tenant_id") != self.tenant_id:
+            raise TenantMismatchError()
+
+        # Retrieve from tenant-scoped knowledge base
+        knowledge = self.vector_store.query(
+            query,
+            namespace=self.config["knowledge_base"],
+            filter={"tenant_id": self.tenant_id}
+        )
+
+        # Load tenant-scoped memory
+        memory = self.memory_store.get(
+            namespace=self.config["memory_namespace"],
+            session_id=context["session_id"]
+        )
+
+        # Execute with tenant-specific tools
+        response = self.llm.invoke(
+            prompt=self.config["prompt_template"].format(
+                query=query,
+                context=knowledge,
+                memory=memory
+            ),
+            tools=self.config["tools"]
+        )
+
+        # Log with tenant tagging for billing
+        self.metrics.record(
+            tenant_id=self.tenant_id,
+            tokens_used=response.usage.total_tokens,
+            cost=self.calculate_cost(response)
+        )
+
+        return response
+
+class TenantMemoryIsolation:
+    """Strict memory isolation between tenants."""
+
+    def __init__(self, storage_backend):
+        self.storage = storage_backend
+
+    def store(self, tenant_id: str, key: str, value: any):
+        """Store with tenant prefix."""
+        namespaced_key = f"tenant:{tenant_id}:{key}"
+        self.storage.set(namespaced_key, value)
+
+    def retrieve(self, tenant_id: str, key: str):
+        """Retrieve with tenant validation."""
+        namespaced_key = f"tenant:{tenant_id}:{key}"
+        return self.storage.get(namespaced_key)
+
+    def list_keys(self, tenant_id: str):
+        """List only tenant's own keys."""
+        pattern = f"tenant:{tenant_id}:*"
+        return self.storage.scan(pattern)
+
+    def cross_tenant_check(self, tenant_id: str, operation: str):
+        """Audit any cross-tenant access attempts."""
+        # Log for security audit
+        self.audit_log.record(
+            event="cross_tenant_check",
+            tenant_id=tenant_id,
+            operation=operation,
+            timestamp=datetime.now()
+        )
+```
+
+**Knowledge Base Isolation (Milvus Example):**
+
+| Strategy | Isolation | Performance | Use Case |
+|----------|-----------|-------------|----------|
+| **Database-level** | Highest | Good | <100 tenants, high security |
+| **Collection-level** | High | Better | 100-10K tenants |
+| **Partition-level** | Medium | Best | >10K tenants |
+
+```python
+class TenantKnowledgeBase:
+    """Tenant-isolated vector knowledge base."""
+
+    def __init__(self, tenant_id: str, strategy: str = "partition"):
+        self.tenant_id = tenant_id
+        self.strategy = strategy
+
+    def get_collection_name(self):
+        if self.strategy == "database":
+            return f"db_{self.tenant_id}.knowledge"
+        elif self.strategy == "collection":
+            return f"knowledge_{self.tenant_id}"
+        else:  # partition
+            return "shared_knowledge"
+
+    def query(self, vector, top_k=10):
+        if self.strategy == "partition":
+            # Filter by tenant partition
+            return self.milvus.search(
+                collection="shared_knowledge",
+                vectors=[vector],
+                partition_names=[f"tenant_{self.tenant_id}"],
+                top_k=top_k
+            )
+        else:
+            return self.milvus.search(
+                collection=self.get_collection_name(),
+                vectors=[vector],
+                top_k=top_k
+            )
+```
+
+---
+
+### Multi-Tenant Security Checklist
+
+**Isolation:**
+- [ ] Tenant ID validated on every request
+- [ ] Memory namespaced by tenant
+- [ ] Knowledge base isolated (DB/collection/partition)
+- [ ] Tools scoped to tenant permissions
+- [ ] No cross-tenant data leakage in logs
+
+**Authentication & Authorization:**
+- [ ] OAuth 2.0/OpenID Connect per tenant
+- [ ] RBAC within tenant
+- [ ] API keys rotated per tenant policy
+- [ ] Directory integration (LDAP/AD) if enterprise
+
+**Data Privacy:**
+- [ ] Tenant data encryption at rest (tenant-specific keys)
+- [ ] TLS for all tenant data in transit
+- [ ] Data residency requirements met
+- [ ] Retention policies per tenant
+- [ ] Right to deletion implemented
+
+**Billing & Metering:**
+- [ ] Token usage tracked per tenant
+- [ ] Cost attribution accurate
+- [ ] Rate limits enforced per tenant tier
+- [ ] Usage dashboards per tenant
+
+---
+
 ## Related Documents
 
 - [security-research.md](security-research.md) - Full research report with detailed checklists

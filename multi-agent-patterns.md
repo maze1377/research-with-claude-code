@@ -54,6 +54,183 @@ Each agent in a LangGraph multi-agent system maintains:
 
 ---
 
+## Workflows vs Agents: Fundamental Distinction
+
+**Reference:** arXiv:2404.11584 "Landscape of Emerging AI Agent Architectures"
+
+Before diving into multi-agent patterns, it's crucial to understand the fundamental distinction between **workflows** and **agents**—two paradigms that exist on a spectrum of determinism vs autonomy.
+
+### Core Definitions
+
+| Aspect | Workflows | Agents |
+|--------|-----------|--------|
+| **Definition** | Deterministic systems with predefined, fixed sequences | Autonomous systems with dynamic planning and adaptation |
+| **Control** | Developer sets the sequence | LLM decides the sequence |
+| **Path** | Fixed, unidirectional | Dynamic, looping, adaptive |
+| **Predictability** | High (same input → same path) | Low (same input → varying paths) |
+| **Flexibility** | Low (can't handle edge cases) | High (adapts to novel scenarios) |
+| **Analogy** | Assembly line | Autonomous employee |
+
+### The Autonomy Spectrum
+
+```
+DETERMINISTIC ◄─────────────────────────────────────► AUTONOMOUS
+
+┌─────────────────────────────────────────────────────────────────┐
+│ WORKFLOWS              AGENT LOOPS           TRUE AGENTS       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ ┌─────────────┐     ┌─────────────┐     ┌─────────────┐        │
+│ │ Fixed Steps │     │ Fixed Loop  │     │ Dynamic     │        │
+│ │ A → B → C   │     │ but LLM     │     │ Planning &  │        │
+│ │             │     │ decides HOW │     │ Adaptation  │        │
+│ └─────────────┘     └─────────────┘     └─────────────┘        │
+│                                                                 │
+│ Examples:            Examples:            Examples:             │
+│ - RAG pipelines      - ReAct loops        - Coding agents       │
+│ - ETL processes      - Tool-calling       - Research agents     │
+│ - Approval chains    - Chat + tools       - Auto-debugging      │
+│                                                                 │
+│ Predictable ●        Balanced ●           Flexible ●            │
+│ Cheap ●              Moderate ●           Expensive ●           │
+│ Debuggable ●         Traceable ●          Complex ●             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### When to Use Each
+
+#### Use Workflows When:
+- ✅ Task has well-defined, repeatable steps
+- ✅ Predictability and auditability required (compliance, finance)
+- ✅ High volume with low variance
+- ✅ Cost sensitivity is high
+- ✅ Long-running processes (days/weeks) with external events
+- ✅ Debugging and traceability are critical
+
+#### Use Agents When:
+- ✅ Task requires adaptation to unknown conditions
+- ✅ Edge cases are common and unpredictable
+- ✅ Complex reasoning or multi-step problem solving needed
+- ✅ Goals are open-ended or exploratory
+- ✅ Self-correction capabilities needed
+- ✅ Flexibility more important than cost
+
+#### Use Hybrid (Recommended for Production):
+- ✅ Workflow orchestrates overall process
+- ✅ Agent nodes handle specific complex steps
+- ✅ Deterministic routing with agentic reasoning
+- ✅ Best of both: predictability + flexibility
+
+### Five Planning Approaches for Agents
+
+From arXiv:2404.11584, agents use these planning strategies:
+
+| Approach | Description | Best For |
+|----------|-------------|----------|
+| **Classical Planning** | Symbolic planners (PDDL) for deterministic action sequences | Structured domains, known state spaces |
+| **LLM-as-a-Judge** | LLM evaluates intermediate outputs for quality | Self-critique loops, iterative improvement |
+| **Monte Carlo Tree Search** | Simulates action branches probabilistically | Complex search spaces, game-like decisions |
+| **ReAct** | Interleaves reasoning traces with acting (observe-think-act) | Tool use, grounded planning |
+| **Multi-Agent Debate** | Agents propose, critique, refine plans via discussion | Reducing hallucinations, consensus building |
+
+### Practical Implementation: LangGraph Hybrid
+
+**Workflow with ReAct Agent Node:**
+```python
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import create_react_agent
+from typing import TypedDict
+
+class State(TypedDict):
+    messages: list
+    risk_level: str
+    analysis_result: str
+
+# Deterministic workflow node
+def parse_input(state: State) -> State:
+    # Fixed logic: classify risk level
+    content = state["messages"][-1]["content"]
+    risk = "high" if "urgent" in content.lower() else "low"
+    return {"risk_level": risk}
+
+# Agent node for complex reasoning
+def risk_analysis_agent(state: State) -> State:
+    # Agent handles dynamic reasoning
+    agent = create_react_agent(
+        model=llm,
+        tools=[search_tool, calculator_tool, policy_tool]
+    )
+    result = agent.invoke(state)
+    return {"analysis_result": result["messages"][-1]["content"]}
+
+# Deterministic routing
+def route_by_risk(state: State) -> str:
+    if state["risk_level"] == "high":
+        return "agent_analysis"  # Complex: use agent
+    return "simple_response"     # Simple: skip agent
+
+# Build hybrid graph
+graph = StateGraph(State)
+graph.add_node("parse", parse_input)
+graph.add_node("agent_analysis", risk_analysis_agent)
+graph.add_node("simple_response", lambda s: {"analysis_result": "Standard processing complete"})
+
+graph.set_entry_point("parse")
+graph.add_conditional_edges("parse", route_by_risk)
+graph.add_edge("agent_analysis", END)
+graph.add_edge("simple_response", END)
+
+app = graph.compile()
+```
+
+### Trade-off Analysis
+
+| Factor | Workflows | Agents | Winner |
+|--------|-----------|--------|--------|
+| **Development Cost** | Lower (fixed paths) | Higher (complex testing) | Workflows |
+| **Runtime Cost** | Lower (fewer LLM calls) | Higher (iterations) | Workflows |
+| **Predictability** | High | Low | Workflows |
+| **Flexibility** | Low | High | Agents |
+| **Debugging** | Easy (traceable) | Hard (dynamic paths) | Workflows |
+| **Edge Case Handling** | Poor | Good | Agents |
+| **Scalability** | Excellent | Good | Workflows |
+| **Long-running Tasks** | Excellent (state persistence) | Poor (drift risk) | Workflows |
+
+### Failure Mode Comparison
+
+| Failure Type | Workflow Behavior | Agent Behavior |
+|--------------|-------------------|----------------|
+| **Unexpected Input** | Fails predictably | May adapt or spiral |
+| **Infinite Loops** | Not possible (fixed) | Risk without limits |
+| **Hallucination** | Contained to step | Can compound |
+| **Recovery** | Manual reprogramming | Self-correction possible |
+| **Debugging** | Trace specific step | Trace entire reasoning chain |
+
+### Decision Criteria: Escalate from Workflow to Agent
+
+```
+START with Workflow (Crawl Phase)
+├── Task has fixed, known steps? → STAY Workflow
+├── High volume, low variance? → STAY Workflow
+├── Compliance/audit requirements? → STAY Workflow
+│
+├── Frequent edge cases? → ADD Agent nodes
+├── Complex reasoning needed? → ADD Agent nodes
+├── Need self-correction? → ADD Agent nodes
+│
+├── Open-ended goals? → FULL Agent
+├── Unknown environments? → FULL Agent
+└── Creativity required? → FULL Agent
+```
+
+### Key Insight
+
+> "Start with workflows for reliability. Add agentic elements incrementally as trust in LLM decisions grows. The goal is not full autonomy—it's **appropriate autonomy** for each task."
+
+**Practical Rule:** If you can draw a flowchart of the process, use a workflow. If the process requires "it depends" decisions at multiple points, use agents (or hybrid).
+
+---
+
 ## When to Use Multi-Agent vs Single Agent
 
 ### Benchmarking Results (LangChain 2025)
@@ -361,6 +538,249 @@ pip install langgraph-swarm
 - Highly parallel tasks
 - Exploration and creative tasks
 - Large teams (5+ agents)
+
+---
+
+## 5-Axis Hierarchical MAS Taxonomy (arXiv:2508.12683)
+
+**Reference:** arXiv:2508.12683 "A Taxonomy of Hierarchical Multi-Agent Systems"
+
+This taxonomy provides a systematic framework for classifying hierarchical multi-agent systems (HMAS) across 5 orthogonal dimensions. It's essential for understanding where your multi-agent system falls on the design spectrum.
+
+### The Five Axes
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    5-AXIS HMAS TAXONOMY                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  AXIS 1: CONTROL HIERARCHY                                          │
+│  ├─ Centralized (single coordinator controls all)                  │
+│  ├─ Decentralized (peer agents with local rules)                   │
+│  └─ Federated/Hybrid (layered coordination)                        │
+│                                                                     │
+│  AXIS 2: INFORMATION FLOW                                           │
+│  ├─ Top-Down (goals, specs, policies flow down)                    │
+│  ├─ Bottom-Up (rewards, summaries, observations flow up)           │
+│  └─ Bidirectional (with protocol constraints)                      │
+│                                                                     │
+│  AXIS 3: ROLE & TASK DELEGATION                                     │
+│  ├─ Fixed Roles (pre-assigned, static duties)                      │
+│  ├─ Emergent Roles (dynamic, runtime allocation)                   │
+│  └─ Hybrid (mixed fixed + emergent)                                │
+│                                                                     │
+│  AXIS 4: COMMUNICATION STRUCTURE                                    │
+│  ├─ Static Networks (fixed agent links)                            │
+│  └─ Dynamic Networks (adaptive connections)                        │
+│                                                                     │
+│  AXIS 5: TEMPORAL LAYERING                                          │
+│  ├─ Uniform (all agents same timescale)                            │
+│  └─ Layered (different timescales: strategic/tactical/operational) │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Axis 1: Control Hierarchy
+
+How decision-making authority is distributed:
+
+| Type | Description | LLM Example | Trade-offs |
+|------|-------------|-------------|------------|
+| **Centralized** | Single coordinator dictates all policies | Supervisor pattern | Simple but bottleneck-prone |
+| **Decentralized** | Autonomous agents with local rules | Swarm pattern | Scalable but coordination overhead |
+| **Federated** | Layered coordination with local autonomy | Hierarchical teams | Balanced but complex |
+
+**Decision Criterion:** Use centralized for simple orchestration, decentralized for swarms, federated for enterprise scale.
+
+### Axis 2: Information Flow
+
+How information moves through the hierarchy:
+
+```
+TOP-DOWN FLOW                    BOTTOM-UP FLOW
+┌─────────────┐                  ┌─────────────┐
+│ Coordinator │                  │ Coordinator │
+│  (Goals,    │                  │  (Receives  │
+│   Policies) │                  │   Summaries)│
+└──────┬──────┘                  └──────▲──────┘
+       │                                │
+   ┌───┴───┐                        ┌───┴───┐
+   ▼       ▼                        │       │
+┌────┐  ┌────┐                   ┌────┐  ┌────┐
+│ W1 │  │ W2 │                   │ W1 │  │ W2 │
+│(Exec│  │(Exec│                  │(Report│ │(Report│
+│ute) │  │ute) │                  │ s)   │  │ s)   │
+└────┘  └────┘                   └────┘  └────┘
+
+BIDIRECTIONAL FLOW
+┌─────────────┐
+│ Coordinator │◄────┐
+│  (Goals ↓,  │     │
+│   Summary ↑)│     │
+└──────┬──────┘     │
+       │            │
+   ┌───┴───┐    Feedback
+   ▼       ▼        │
+┌────┐  ┌────┐      │
+│ W1 │  │ W2 │──────┘
+└────┘  └────┘
+```
+
+**LLM Implementation:**
+```python
+class HierarchicalState(TypedDict):
+    # Top-down: Coordinator sets goals
+    current_goal: str
+    assigned_subtasks: list[str]
+
+    # Bottom-up: Workers report results
+    worker_summaries: dict[str, str]
+    local_observations: list[str]
+
+    # Bidirectional: State synced
+    shared_context: str
+```
+
+### Axis 3: Role & Task Delegation
+
+How roles are assigned to agents:
+
+| Type | Description | When to Use |
+|------|-------------|-------------|
+| **Fixed Roles** | Pre-assigned at design time (researcher, analyst, writer) | Stable domains, well-defined expertise |
+| **Emergent Roles** | Assigned at runtime based on context | Dynamic environments, unknown tasks |
+| **Hybrid** | Core fixed roles + emergent specialists | Production systems (balance stability + flexibility) |
+
+**Contract Net Protocol Example (Emergent):**
+```python
+def contract_net_delegation(task, available_agents):
+    # Step 1: Announce task
+    proposals = []
+    for agent in available_agents:
+        bid = agent.evaluate_task(task)
+        if bid.can_handle:
+            proposals.append((agent, bid))
+
+    # Step 2: Select best bidder
+    if proposals:
+        winner = max(proposals, key=lambda x: x[1].confidence)
+        return winner[0].execute(task)
+
+    # Step 3: No suitable agent - escalate
+    return escalate_to_coordinator(task)
+```
+
+### Axis 4: Communication Structure
+
+Network topology between agents:
+
+| Topology | Pattern | LLM Example | Characteristics |
+|----------|---------|-------------|-----------------|
+| **Star** | Hub-and-spoke | Supervisor pattern | Central control, easy routing |
+| **Tree** | Hierarchical branching | Hierarchical teams | Scalable, clear escalation |
+| **Mesh** | Full connectivity | Collaboration pattern | Flexible, high overhead |
+| **Static** | Fixed connections | Predefined workflows | Predictable, limited |
+| **Dynamic** | Runtime connections | Swarm pattern | Adaptive, complex |
+
+```
+STAR                 TREE                 MESH
+    ┌───┐           ┌───┐           ┌───┐
+    │ C │           │ M │           │ A │◄───────┐
+    └─┬─┘           └─┬─┘           └─┬─┘        │
+  ┌───┼───┐       ┌──┴──┐             │◄────────┐│
+  ▼   ▼   ▼       ▼     ▼             ▼         ││
+┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐       ┌───┐      ││
+│ A │ │ B │ │ C │ │ C │ │ C │       │ B │◄─────┼┘
+└───┘ └───┘ └───┘ └─┬─┘ └─┬─┘       └─┬─┘      │
+                  ┌─┴─┐ ┌─┴─┐         │◄───────┘
+                  ▼   ▼ ▼   ▼         ▼
+                 W1  W2 W3  W4      ┌───┐
+                                    │ C │
+                                    └───┘
+```
+
+### Axis 5: Temporal Layering
+
+Different agents operating at different timescales:
+
+| Layer | Timescale | Responsibility | LLM Example |
+|-------|-----------|----------------|-------------|
+| **Strategic** | Days/weeks | Long-term planning, goal setting | Planning agent |
+| **Tactical** | Hours/day | Task decomposition, coordination | Supervisor |
+| **Operational** | Minutes | Real-time execution, tool use | Worker agents |
+
+**Example: Enterprise Research System**
+```
+┌─────────────────────────────────────────────────────────────┐
+│ STRATEGIC LAYER (Weekly)                                     │
+│ "Set research priorities, allocate resources"                │
+│                         │                                    │
+│                         ▼                                    │
+├─────────────────────────────────────────────────────────────┤
+│ TACTICAL LAYER (Daily)                                       │
+│ "Decompose research tasks, assign to specialists"           │
+│                    ┌────┴────┐                               │
+│                    ▼         ▼                               │
+├─────────────────────────────────────────────────────────────┤
+│ OPERATIONAL LAYER (Real-time)                                │
+│ ┌──────────┐    ┌──────────┐    ┌──────────┐                │
+│ │ Search   │    │ Analysis │    │ Writing  │                │
+│ │ Agent    │    │ Agent    │    │ Agent    │                │
+│ └──────────┘    └──────────┘    └──────────┘                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Taxonomy Classification Matrix
+
+Use this matrix to classify your multi-agent system:
+
+| Your System | Axis 1 | Axis 2 | Axis 3 | Axis 4 | Axis 5 |
+|-------------|--------|--------|--------|--------|--------|
+| **Simple Supervisor** | Centralized | Top-Down | Fixed | Star | Uniform |
+| **Hierarchical Teams** | Federated | Bidirectional | Hybrid | Tree | Layered |
+| **Swarm** | Decentralized | Bottom-Up | Emergent | Dynamic Mesh | Uniform |
+| **CrewAI Default** | Centralized | Bidirectional | Fixed | Star | Uniform |
+| **AutoGen** | Decentralized | Bidirectional | Emergent | Dynamic | Uniform |
+| **LangGraph Supervisor** | Centralized | Top-Down | Fixed | Star | Uniform |
+| **LangGraph Swarm** | Decentralized | Bidirectional | Emergent | Dynamic | Uniform |
+
+### When to Use Each Combination
+
+**Centralized + Fixed + Static (Simple Supervisor):**
+- Well-defined workflows
+- Small teams (2-4 agents)
+- Predictable tasks
+- Easy debugging
+
+**Federated + Hybrid + Dynamic (Enterprise Scale):**
+- Complex organizations
+- 10+ agents
+- Mixed task types
+- Needs both structure and flexibility
+
+**Decentralized + Emergent + Dynamic (Swarm):**
+- Highly dynamic environments
+- Large agent populations
+- Exploration tasks
+- Resilience critical
+
+### Trade-offs Summary
+
+| Dimension | More Centralized/Fixed/Static | More Decentralized/Emergent/Dynamic |
+|-----------|-------------------------------|-------------------------------------|
+| **Complexity** | Lower | Higher |
+| **Scalability** | Limited | Better |
+| **Predictability** | Higher | Lower |
+| **Flexibility** | Lower | Higher |
+| **Debugging** | Easier | Harder |
+| **Resilience** | Lower (single points of failure) | Higher |
+| **Cost** | Lower (fewer LLM calls) | Higher |
+
+### Key Insight
+
+> "The 5-axis taxonomy isn't about finding the 'best' configuration—it's about consciously choosing trade-offs that match your domain constraints."
+
+**Practical Application:** Before building a multi-agent system, explicitly classify it on all 5 axes. This forces clear architectural decisions and prevents accidental complexity.
 
 ---
 
@@ -1849,6 +2269,608 @@ START
 ```
 
 **Key Takeaway**: "Start from your goals and constraints" - Don't default to multi-agent. Use when complexity justifies overhead.
+
+---
+
+## 10. Agent-to-Agent (A2A) Protocol
+
+**Google's open standard for secure, interoperable agent communication**
+
+### 10.1 A2A Protocol Overview
+
+A2A (Agent-to-Agent) is an open protocol launched by Google Cloud in April 2025 for enabling secure communication between AI agents across different vendors, frameworks, and platforms. It's now hosted by the Linux Foundation.
+
+```
+A2A vs MCP Relationship:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Multi-Agent System                               │
+│                                                                     │
+│    ┌──────────────────────────────────────────────────────────┐    │
+│    │                A2A Layer (Horizontal)                     │    │
+│    │    Agent ←──────────→ Agent ←──────────→ Agent           │    │
+│    │    (Task Delegation, Discovery, Coordination)             │    │
+│    └──────────────────────────────────────────────────────────┘    │
+│                        │               │                            │
+│    ┌──────────────────────────────────────────────────────────┐    │
+│    │                MCP Layer (Vertical)                       │    │
+│    │    Agent ←──────→ Tools/Data ←──────→ Resources          │    │
+│    │    (Tool Access, Context, Prompts)                        │    │
+│    └──────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────┘
+
+A2A: Agent-to-Agent (who talks to whom, task lifecycle)
+MCP: Agent-to-Tools (what capabilities agents have)
+```
+
+### 10.2 A2A Protocol Specification
+
+**Core Technologies:**
+- **Transport**: HTTP/HTTPS
+- **Message Format**: JSON-RPC 2.0
+- **Streaming**: Server-Sent Events (SSE)
+- **Discovery**: Agent Cards (JSON-LD)
+
+```python
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
+from enum import Enum
+from datetime import datetime
+import json
+
+class TaskState(Enum):
+    SUBMITTED = "submitted"
+    WORKING = "working"
+    INPUT_REQUIRED = "input-required"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+@dataclass
+class AgentCard:
+    """
+    Agent Card: JSON-LD metadata describing agent capabilities.
+    Served at /.well-known/agent.json
+    """
+    context: str = "https://a2a-protocol.org/context"
+    protocol_version: str = "2025-03-25"
+    title: str = ""
+    description: str = ""
+    service_endpoints: Dict[str, str] = field(default_factory=dict)
+    authentication: Dict[str, str] = field(default_factory=dict)
+    capabilities: List[str] = field(default_factory=list)
+    supported_modalities: List[str] = field(default_factory=list)
+
+    def to_json(self) -> Dict:
+        return {
+            "@context": self.context,
+            "protocolVersion": self.protocol_version,
+            "title": self.title,
+            "description": self.description,
+            "serviceEndpoints": self.service_endpoints,
+            "authentication": self.authentication,
+            "capabilities": self.capabilities,
+            "supportedModalities": self.supported_modalities
+        }
+
+
+@dataclass
+class A2ATask:
+    """
+    A2A Task: The fundamental unit of work between agents.
+    """
+    task_id: str
+    task_type: str
+    status: TaskState
+    message: str
+    params: Dict[str, Any] = field(default_factory=dict)
+    artifacts: List[Dict] = field(default_factory=list)
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+
+    def to_json_rpc(self, method: str) -> Dict:
+        return {
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": {
+                "taskId": self.task_id,
+                "taskType": self.task_type,
+                "message": self.message,
+                "params": self.params
+            },
+            "id": self.task_id
+        }
+```
+
+### 10.3 A2A Server Implementation
+
+```python
+from flask import Flask, jsonify, request, Response
+import json
+import uuid
+
+app = Flask(__name__)
+
+# Task storage
+tasks: Dict[str, A2ATask] = {}
+
+# Agent Card endpoint
+@app.route('/.well-known/agent.json')
+def agent_card():
+    """
+    Serve Agent Card for discovery.
+    Other agents query this to understand capabilities.
+    """
+    card = AgentCard(
+        title="Research Agent",
+        description="Performs web research and summarization",
+        service_endpoints={
+            "tasks/send": "/a2a/tasks/send",
+            "tasks/get": "/a2a/tasks/get",
+            "tasks/cancel": "/a2a/tasks/cancel",
+            "notifications/receive": "/a2a/notifications"
+        },
+        authentication={
+            "type": "api-key",
+            "header": "X-API-Key"
+        },
+        capabilities=["streaming", "push_notifications", "stateful"],
+        supported_modalities=["text", "json"]
+    )
+    return jsonify(card.to_json())
+
+# Task submission endpoint
+@app.route('/a2a/tasks/send', methods=['POST'])
+def send_task():
+    """
+    Receive new task from client agent.
+    JSON-RPC 2.0 format.
+    """
+    data = request.json
+
+    # Validate JSON-RPC format
+    if data.get("jsonrpc") != "2.0":
+        return jsonify({
+            "jsonrpc": "2.0",
+            "error": {"code": -32600, "message": "Invalid Request"},
+            "id": None
+        }), 400
+
+    # Create task
+    task_id = str(uuid.uuid4())
+    params = data.get("params", {})
+
+    task = A2ATask(
+        task_id=task_id,
+        task_type=params.get("taskType", "default"),
+        status=TaskState.SUBMITTED,
+        message=params.get("message", ""),
+        params=params
+    )
+
+    tasks[task_id] = task
+
+    # Check if streaming requested
+    if params.get("stream"):
+        return stream_task_execution(task)
+
+    # Execute task asynchronously
+    execute_task_async(task)
+
+    return jsonify({
+        "jsonrpc": "2.0",
+        "result": {
+            "taskId": task_id,
+            "status": task.status.value
+        },
+        "id": data.get("id")
+    })
+
+def stream_task_execution(task: A2ATask) -> Response:
+    """
+    Stream task updates via Server-Sent Events.
+    """
+    def generate():
+        # Update status to working
+        task.status = TaskState.WORKING
+        yield f"data: {json.dumps({'type': 'status', 'status': 'working'})}\\n\\n"
+
+        # Execute task steps
+        for i, step in enumerate(execute_task_steps(task)):
+            yield f"data: {json.dumps({'type': 'progress', 'step': i+1, 'content': step})}\\n\\n"
+
+        # Complete
+        task.status = TaskState.COMPLETED
+        yield f"data: {json.dumps({'type': 'completed', 'result': task.artifacts})}\\n\\n"
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        }
+    )
+
+# Task status endpoint
+@app.route('/a2a/tasks/get', methods=['POST'])
+def get_task():
+    """
+    Get current task status.
+    """
+    data = request.json
+    task_id = data.get("params", {}).get("taskId")
+
+    if task_id not in tasks:
+        return jsonify({
+            "jsonrpc": "2.0",
+            "error": {"code": -32602, "message": "Task not found"},
+            "id": data.get("id")
+        }), 404
+
+    task = tasks[task_id]
+    return jsonify({
+        "jsonrpc": "2.0",
+        "result": {
+            "taskId": task.task_id,
+            "status": task.status.value,
+            "artifacts": task.artifacts,
+            "updatedAt": task.updated_at.isoformat()
+        },
+        "id": data.get("id")
+    })
+
+# Notification endpoint
+@app.route('/a2a/notifications', methods=['POST'])
+def receive_notification():
+    """
+    Receive push notifications from other agents.
+    """
+    notification = request.json
+    task_id = notification.get("taskId")
+
+    # Process notification
+    if task_id in tasks:
+        tasks[task_id].status = TaskState(notification.get("status", "working"))
+
+    return jsonify({"status": "received"})
+```
+
+### 10.4 A2A Client Implementation
+
+```python
+import requests
+from typing import Optional, Generator
+import json
+
+class A2AClient:
+    """
+    Client for communicating with A2A-compatible agents.
+    """
+
+    def __init__(self, base_url: str, api_key: Optional[str] = None):
+        self.base_url = base_url.rstrip('/')
+        self.api_key = api_key
+        self.agent_card: Optional[Dict] = None
+
+    def discover_agent(self) -> Dict:
+        """
+        Discover agent capabilities via Agent Card.
+        """
+        response = requests.get(
+            f"{self.base_url}/.well-known/agent.json",
+            headers=self._headers()
+        )
+        response.raise_for_status()
+        self.agent_card = response.json()
+        return self.agent_card
+
+    def send_task(
+        self,
+        task_type: str,
+        message: str,
+        params: Optional[Dict] = None,
+        stream: bool = False
+    ) -> Dict:
+        """
+        Send task to remote agent.
+        """
+        # Ensure we have agent card
+        if not self.agent_card:
+            self.discover_agent()
+
+        endpoint = self.agent_card["serviceEndpoints"]["tasks/send"]
+
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "tasks/send",
+            "params": {
+                "taskType": task_type,
+                "message": message,
+                **(params or {}),
+                "stream": stream
+            },
+            "id": str(uuid.uuid4())
+        }
+
+        if stream:
+            return self._send_streaming(endpoint, payload)
+
+        response = requests.post(
+            f"{self.base_url}{endpoint}",
+            json=payload,
+            headers=self._headers()
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def _send_streaming(
+        self,
+        endpoint: str,
+        payload: Dict
+    ) -> Generator[Dict, None, None]:
+        """
+        Send task with streaming response.
+        """
+        response = requests.post(
+            f"{self.base_url}{endpoint}",
+            json=payload,
+            headers=self._headers(),
+            stream=True
+        )
+        response.raise_for_status()
+
+        for line in response.iter_lines():
+            if line:
+                line = line.decode('utf-8')
+                if line.startswith('data: '):
+                    yield json.loads(line[6:])
+
+    def get_task_status(self, task_id: str) -> Dict:
+        """
+        Get current status of a task.
+        """
+        if not self.agent_card:
+            self.discover_agent()
+
+        endpoint = self.agent_card["serviceEndpoints"]["tasks/get"]
+
+        response = requests.post(
+            f"{self.base_url}{endpoint}",
+            json={
+                "jsonrpc": "2.0",
+                "method": "tasks/get",
+                "params": {"taskId": task_id},
+                "id": str(uuid.uuid4())
+            },
+            headers=self._headers()
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def _headers(self) -> Dict:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["X-API-Key"] = self.api_key
+        return headers
+
+
+# Usage example
+async def coordinate_agents():
+    """
+    Example: Orchestrate multiple A2A agents.
+    """
+    # Connect to different specialized agents
+    research_agent = A2AClient("https://research-agent.example.com", api_key="...")
+    writing_agent = A2AClient("https://writing-agent.example.com", api_key="...")
+
+    # Discover capabilities
+    research_caps = research_agent.discover_agent()
+    writing_caps = writing_agent.discover_agent()
+
+    print(f"Research agent capabilities: {research_caps['capabilities']}")
+    print(f"Writing agent capabilities: {writing_caps['capabilities']}")
+
+    # Send research task
+    research_result = research_agent.send_task(
+        task_type="research",
+        message="Find latest trends in AI agent protocols",
+        params={"depth": "comprehensive"}
+    )
+
+    # Wait for completion
+    task_id = research_result["result"]["taskId"]
+    while True:
+        status = research_agent.get_task_status(task_id)
+        if status["result"]["status"] == "completed":
+            break
+        await asyncio.sleep(1)
+
+    # Pass to writing agent
+    writing_result = writing_agent.send_task(
+        task_type="summarize",
+        message="Write a summary of the research",
+        params={"research": status["result"]["artifacts"]}
+    )
+
+    return writing_result
+```
+
+### 10.5 A2A vs MCP Comparison
+
+| Aspect | A2A | MCP |
+|--------|-----|-----|
+| **Focus** | Agent-to-agent coordination | Agent-to-tool access |
+| **Interaction** | Horizontal (agent ↔ agent) | Vertical (agent ↔ tools) |
+| **State** | Stateful (task lifecycle) | Stateless (per-call) |
+| **Discovery** | Agent Cards | Tool schemas |
+| **Streaming** | SSE for task updates | SSE for results |
+| **Security** | OAuth 2.0, API keys | Fine-grained access |
+| **Use Case** | Multi-agent workflows | Enhancing single agent |
+
+### 10.6 Combined A2A + MCP Architecture
+
+```python
+class HybridAgentArchitecture:
+    """
+    Combine A2A (agent coordination) with MCP (tool access).
+    """
+
+    def __init__(self):
+        # A2A for agent-to-agent communication
+        self.a2a_clients: Dict[str, A2AClient] = {}
+
+        # MCP for tool access
+        self.mcp_client = MCPClient()
+
+    async def execute_complex_workflow(
+        self,
+        task: str,
+        context: Dict
+    ) -> Dict:
+        """
+        Execute workflow using both A2A and MCP.
+        """
+        # Step 1: Use MCP to access local tools/data
+        local_data = await self.mcp_client.call_tool(
+            "database_query",
+            {"query": "SELECT * FROM knowledge_base WHERE topic = ?", "params": [task]}
+        )
+
+        # Step 2: Use A2A to delegate to specialized agent
+        if self._requires_external_agent(task):
+            research_agent = self._get_or_create_client("research-agent")
+
+            # Send task via A2A
+            result = research_agent.send_task(
+                task_type="research",
+                message=task,
+                params={"context": local_data}
+            )
+
+            # Wait for completion
+            while True:
+                status = research_agent.get_task_status(result["result"]["taskId"])
+                if status["result"]["status"] in ["completed", "failed"]:
+                    break
+                await asyncio.sleep(1)
+
+            external_data = status["result"]["artifacts"]
+        else:
+            external_data = None
+
+        # Step 3: Use MCP to format and store results
+        final_result = await self.mcp_client.call_tool(
+            "format_response",
+            {"local": local_data, "external": external_data}
+        )
+
+        return final_result
+
+    def _get_or_create_client(self, agent_name: str) -> A2AClient:
+        """
+        Get or create A2A client for agent.
+        """
+        if agent_name not in self.a2a_clients:
+            # Discover agent from registry
+            agent_url = self._discover_agent_url(agent_name)
+            self.a2a_clients[agent_name] = A2AClient(agent_url)
+
+        return self.a2a_clients[agent_name]
+```
+
+### 10.7 A2A Security Considerations
+
+```python
+class A2ASecurityManager:
+    """
+    Security best practices for A2A implementations.
+    """
+
+    def __init__(self):
+        self.rate_limits: Dict[str, int] = {}
+        self.allowed_agents: set = set()
+
+    def validate_request(
+        self,
+        request_data: Dict,
+        headers: Dict
+    ) -> bool:
+        """
+        Validate incoming A2A request.
+        """
+        # 1. Validate authentication
+        if not self._validate_auth(headers):
+            raise AuthenticationError("Invalid API key")
+
+        # 2. Validate JSON-RPC format
+        if not self._validate_json_rpc(request_data):
+            raise ValidationError("Invalid JSON-RPC format")
+
+        # 3. Check rate limits
+        client_id = headers.get("X-Client-ID")
+        if not self._check_rate_limit(client_id):
+            raise RateLimitError("Rate limit exceeded")
+
+        # 4. Validate agent is in allowlist (if configured)
+        if self.allowed_agents and client_id not in self.allowed_agents:
+            raise AuthorizationError("Agent not authorized")
+
+        return True
+
+    def _validate_json_rpc(self, data: Dict) -> bool:
+        """
+        Validate JSON-RPC 2.0 format.
+        """
+        required_fields = ["jsonrpc", "method", "params"]
+        if not all(field in data for field in required_fields):
+            return False
+
+        if data.get("jsonrpc") != "2.0":
+            return False
+
+        return True
+
+    def sanitize_params(self, params: Dict) -> Dict:
+        """
+        Sanitize task parameters to prevent injection.
+        """
+        sanitized = {}
+        for key, value in params.items():
+            if isinstance(value, str):
+                # Remove potential injection patterns
+                sanitized[key] = self._sanitize_string(value)
+            else:
+                sanitized[key] = value
+        return sanitized
+```
+
+### 10.8 A2A Deployment Checklist
+
+**Agent Card Setup:**
+- [ ] Agent Card served at `/.well-known/agent.json`
+- [ ] All endpoints documented in serviceEndpoints
+- [ ] Authentication requirements specified
+- [ ] Capabilities accurately described
+
+**Task Handling:**
+- [ ] JSON-RPC 2.0 format validated
+- [ ] Task lifecycle states properly managed
+- [ ] Streaming support via SSE (if needed)
+- [ ] Error responses follow JSON-RPC format
+
+**Security:**
+- [ ] HTTPS enforced
+- [ ] API key or OAuth authentication
+- [ ] Rate limiting implemented
+- [ ] Input sanitization on all params
+- [ ] Audit logging for all requests
+
+**Integration:**
+- [ ] Agent discovery tested with client
+- [ ] Task delegation tested end-to-end
+- [ ] Notification handling implemented
+- [ ] MCP integration tested (if hybrid)
 
 ---
 
