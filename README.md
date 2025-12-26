@@ -2,7 +2,7 @@
 
 **Complete reference for building production multi-agent systems**
 
-Last Updated: 2025-12-25 (Final December Update) | 14 Documents | 68,000+ words | 50+ Academic References
+Last Updated: 2025-12-26 (Research Update) | 17 Documents | 90,000+ words | 60+ Academic References
 
 ---
 
@@ -11,7 +11,7 @@ Last Updated: 2025-12-25 (Final December Update) | 14 Documents | 68,000+ words 
 | I want to... | Go to |
 |--------------|-------|
 | **Build my first agent** | [topics.md](topics.md) → Getting Started (30 min) |
-| Get quick answers | [topics.md](topics.md) - 60+ questions with answers |
+| Get quick answers | [topics.md](topics.md) - 81 questions with answers |
 | Choose a framework | [topics.md](topics.md) → Framework Selection Decision Tree |
 | Understand architectures | [framework-comparison.md](framework-comparison.md) |
 | Compare multi-agent patterns | [multi-agent-patterns.md](multi-agent-patterns.md) |
@@ -24,7 +24,13 @@ Last Updated: 2025-12-25 (Final December Update) | 14 Documents | 68,000+ words 
 | Add agent memory | [topics.md](topics.md) → Memory Systems (Mem0, GraphRAG) |
 | Deploy at scale | [topics.md](topics.md) → Agent Orchestration at Scale |
 | Evaluate & debug | [evaluation-and-debugging.md](evaluation-and-debugging.md) |
+| **Write agent prompts** | [agent-prompting-guide.md](agent-prompting-guide.md) |
+| **Product strategy (PM)** | [product-strategy-guide.md](product-strategy-guide.md) |
+| **Use Cursor/Claude Code** | [developer-productivity-guide.md](developer-productivity-guide.md) |
 | See latest 2025 updates | [2025-updates.md](2025-updates.md) |
+| **Build for robotics** | [topics.md](topics.md) → Embodied Agents (Q73) |
+| **Deploy at edge** | [topics.md](topics.md) → Edge & Distributed Agents (Q74) |
+| **Price AI agents** | [topics.md](topics.md) → Agent Pricing Models (Q72) |
 | Track research progress | [task.md](task.md) |
 
 ---
@@ -33,7 +39,7 @@ Last Updated: 2025-12-25 (Final December Update) | 14 Documents | 68,000+ words 
 
 ### Core Concepts (Start Here)
 ```
-topics.md                    # 60+ critical questions answered
+topics.md                    # 81 critical questions answered
 ├── PRACTICAL GUIDES (NEW)
 │   ├── Getting Started      # First agent in 30 minutes
 │   ├── Framework Decision   # Visual decision tree
@@ -69,7 +75,10 @@ topics.md                    # 60+ critical questions answered
 ├── Troubleshooting (Q24-26) # Failure fixes
 ├── Advanced (Q31-33c)       # Memory, reasoning, CoT, LATS
 ├── Security (Q37-41)        # Injection, sandboxing
-└── Benchmarks (Q42-45)      # AgentBench, BFCL, SWE-bench+
+├── Benchmarks (Q42-45)      # AgentBench, BFCL, SWE-bench+
+├── Prompting (Q46-55)       # Single, multi-agent, LATS, Reflexion
+├── Product & Dev Tools (Q56-71) # Strategy, Cursor, Claude Code
+└── Enterprise & Future (Q72-81) # Pricing, Robotics, Edge, Agentic OS (NEW)
 ```
 
 ### Architecture Patterns
@@ -107,7 +116,7 @@ security-essentials.md               # Consolidated security guide
 ### Core Reference
 | Document | Lines | Purpose |
 |----------|-------|---------|
-| [topics.md](topics.md) | **1980+** | Quick reference - 60+ questions + 19 guides |
+| [topics.md](topics.md) | **3500+** | Quick reference - 81 questions + 19 guides |
 | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) | 813 | 14 failure modes with fixes |
 | [theoretical-foundations.md](theoretical-foundations.md) | 650+ | Academic citations and theory |
 
@@ -123,6 +132,7 @@ security-essentials.md               # Consolidated security guide
 |----------|-------|---------|
 | [api-optimization-guide.md](api-optimization-guide.md) | 550+ | Model selection, cost, performance |
 | [agentic-systems-cookbook.md](agentic-systems-cookbook.md) | 873 | 11 production recipes |
+| [agent-prompting-guide.md](agent-prompting-guide.md) | **2100+** | Single & multi-agent prompting (LATS, Reflexion, frameworks) |
 
 ### Evaluation & Debugging (NEW)
 | Document | Lines | Purpose |
@@ -135,6 +145,12 @@ security-essentials.md               # Consolidated security guide
 |----------|-------|---------|
 | [security-essentials.md](security-essentials.md) | 390+ | Consolidated security (pseudocode) |
 | [security-research.md](security-research.md) | 3200+ | Full security research (reference) |
+
+### Product Strategy & Developer Productivity (NEW)
+| Document | Lines | Purpose |
+|----------|-------|---------|
+| [product-strategy-guide.md](product-strategy-guide.md) | **850+** | Build vs buy, ROI, team structure, vendor evaluation |
+| [developer-productivity-guide.md](developer-productivity-guide.md) | **950+** | Cursor, Claude Code, Windsurf, Devin best practices |
 
 ### 2025 Updates
 | Document | Lines | Purpose |
@@ -168,16 +184,20 @@ security-essentials.md               # Consolidated security guide
 | Metric | Value | Source |
 |--------|-------|--------|
 | GPT-5 AIME (Math) | 94.6% | OpenAI |
-| GPT-5 SWE-bench Verified | 74.9% | OpenAI |
 | Claude Opus 4.5 SWE-bench | 80.9% | Anthropic |
+| GPT-5 SWE-bench Verified | 74.9% | OpenAI |
+| Devin PR merge rate | **67%** (was 34%) | Cognition |
 | Agent S OSWorld | **72.6%** | Simular (beats human 72.36%) |
-| Claude Computer Use OSWorld | 61.4% | Anthropic |
 | o3 ARC-AGI | 88% | OpenAI |
 | MCP Servers | **10,000+** | Linux Foundation AAIF |
-| Mem0 Accuracy Boost | 26% | Mem0 Research |
-| Enterprise Testing Agents | 72% | Deloitte |
-| Enterprise Production Agents | **11%** | Deloitte |
-| Prompt Injection Attack Surge | 540% | OWASP 2025 |
+| Enterprise apps with AI agents (2026) | **40%** (vs <5% in 2025) | Gartner |
+| Agentic AI projects cancelled by 2027 | **>40%** | Gartner |
+| Projected average ROI | **171%** (192% US) | Arcade.dev |
+| All code globally AI-generated | **41%** | GitHub |
+| Developers using AI coding weekly | **82%** | Stack Overflow |
+| AI code with security vulnerabilities | **45%** | Veracode |
+| AI security incidents from prompts | **35%** | Adversa AI |
+| Cursor market valuation | **$9.9B** | June 2025 |
 | Cost Reduction (with optimization) | 50-80% | Production data |
 
 ---

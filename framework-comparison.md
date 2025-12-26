@@ -1,8 +1,8 @@
 # Agentic Framework Comparison
 
-**Consolidated analysis of LangGraph, CrewAI, AutoGPT, OpenAI Agents SDK, and design patterns**
+**Consolidated analysis of LangGraph, CrewAI, AutoGPT, OpenAI Agents SDK, Claude Agent SDK, and design patterns**
 
-**Last Updated:** 2025-12-25
+**Last Updated:** 2025-12-26
 
 ---
 
@@ -13,8 +13,11 @@
 | **LangGraph** | Graph-based | Complex workflows, state machines | Medium-High | v1.0 (Oct 2025) |
 | **CrewAI** | Role-based | Team simulations, defined roles | Medium | 2025 IA40 |
 | **OpenAI Agents SDK** | Primitives | Quick prototypes, production agents | Low | Mar 2025 |
+| **Claude Agent SDK** | Skills-based | Long-running tasks, complex workflows | Medium | Dec 2025 |
 | **AutoGen v0.4** | Layered | Enterprise, Azure integration | Medium | v0.4 |
-| **MS Agent Framework** | Unified | Enterprise, governance | Medium-High | 2025 |
+| **Semantic Kernel** | Plugin-based | Enterprise, Microsoft ecosystem | Medium | 2025 |
+| **DSPy** | Programmatic | Research, prompt optimization | Medium | 2025 |
+| **Pydantic AI** | Type-safe | Python apps, structured outputs | Low-Medium | 2025 |
 | **AWS Bedrock Agents** | Managed | AWS integration, MCP | Medium | AgentCore |
 
 **Market Context (December 2025):**
@@ -261,6 +264,88 @@ Runner.run(agent, input)
 ### Limitations
 - GCP dependency
 - Newer compared to LangGraph/CrewAI
+
+---
+
+## Emerging Frameworks (2025)
+
+### Claude Agent SDK (Anthropic)
+
+Built on Claude Code's production agent harness. Key primitives:
+
+| Component | Purpose |
+|-----------|---------|
+| **Skills** | Markdown files teaching Claude domain expertise |
+| **Hooks** | Shell commands on lifecycle events (format on edit, notify on idle) |
+| **Plugins** | Package and share skills + MCP servers + hooks |
+| **Context Compaction** | Auto-summarize when context fills |
+
+**Strengths:**
+- Planning-first architecture optimized for complex tasks
+- Native MCP integration (2000+ servers)
+- Skills system for domain expertise injection
+- Production-tested in Claude Code
+
+**Best For:** Long-running development tasks, complex multi-step workflows
+
+### Semantic Kernel (Microsoft)
+
+Enterprise-focused SDK for building AI agents.
+
+| Feature | Capability |
+|---------|------------|
+| **Plugins** | Reusable function collections |
+| **Planners** | Automatic task decomposition |
+| **Memory** | Vector stores, semantic memory |
+| **Connectors** | Azure, M365, custom |
+
+**Strengths:**
+- Enterprise integration (Azure, M365)
+- Strong .NET and Python support
+- Built-in planning and memory
+- Microsoft backing
+
+**Best For:** Enterprise applications, Microsoft ecosystem integration
+
+### DSPy (Stanford)
+
+Programmatic approach to prompt optimization.
+
+```
+Signature: Input → Output with constraints
+Module: Composable prompt components
+Compiler: Automatic prompt optimization
+```
+
+**Strengths:**
+- Automatic prompt optimization
+- Composable modules
+- Reproducible results
+- Research-backed methodology
+
+**Best For:** Research applications, systematic prompt engineering
+
+### Pydantic AI (Pydantic)
+
+Type-safe agent framework using Pydantic models.
+
+```python
+from pydantic_ai import Agent
+
+agent = Agent(
+    system_prompt="You are helpful assistant.",
+    model="openai:gpt-4o",
+    result_type=ResponseModel  # Enforced output schema
+)
+```
+
+**Strengths:**
+- Type safety with Pydantic validation
+- Familiar Python patterns
+- Clean API design
+- Built-in structured outputs
+
+**Best For:** Python-heavy teams, type-safe production systems
 
 ---
 

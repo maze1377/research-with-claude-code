@@ -400,9 +400,9 @@ Complete Production Workflow:
 - **Note**: agent-safety-code-examples.py was removed in Phase 9 cleanup (concepts in security-essentials.md)
 
 ## Status
-✅ **COMPLETED & UPDATED** - Latest: 2025-12-25
+✅ **COMPLETED & UPDATED** - Latest: 2025-12-26
 
-All research objectives fully achieved with nine comprehensive phases:
+All research objectives fully achieved with comprehensive phases including enterprise readiness:
 1. **Framework Analysis**: OpenManus, LangGraph, CrewAI, AutoGPT with 12-stage production workflow
 2. **Multi-Agent Systems**: 2025 patterns, talkshow implementations, production case studies
 3. **Theoretical Foundations**: Latest research papers, API optimization, cost/performance strategies
@@ -411,20 +411,22 @@ All research objectives fully achieved with nine comprehensive phases:
 6. **Advanced Optimization**: Cache strategies, prompt optimization, hallucination reduction, performance tuning
 7. **2025 Updates**: Latest models (o3, Claude Opus 4.5), browser agents, MCP protocol, memory systems
 8. **Safety & Security**: Comprehensive security research, alignment challenges, compliance requirements
-9. **Accuracy & Performance**: Multi-agent accuracy enhancement (MCF, ICE, debate), performance optimization (parallel, caching, speculative)
+9. **Accuracy & Performance**: Multi-agent accuracy enhancement (MCF, ICE, debate), performance optimization
+10. **Enterprise & Future (Phase 22)**: Agent pricing, embodied robotics, edge computing, agentic OS, governance
 
-**Final Deliverables (14 active documents, 9 archived):**
+**Final Deliverables (17 active documents, 9 archived):**
 - Core Reference (3 files):
-  - topics.md (900+ lines) - 45 questions answered
+  - topics.md (3500+ lines) - 96 questions answered
   - patterns-and-antipatterns.md (813 lines) - 14 failure modes with fixes
   - theoretical-foundations.md (650+ lines) - 28+ academic citations
 - Architecture & Workflow (3 files):
   - framework-comparison.md (330 lines) - LangGraph, CrewAI, AutoGPT
   - multi-agent-patterns.md (1200+ lines) - Multi-agent architectures
   - workflow-overview.md (300+ lines) - 12-stage workflow concepts
-- Implementation (2 files):
+- Implementation (3 files):
   - api-optimization-guide.md (750+ lines) - Model selection, cost, performance, accuracy
   - agentic-systems-cookbook.md (873 lines) - 11 production recipes
+  - agent-prompting-guide.md (750+ lines) - Single & multi-agent prompting
 - Evaluation & Paradigms (2 files):
   - evaluation-and-debugging.md (450+ lines) - Evaluation, tracing, improvement
   - advanced-agent-paradigms.md (650+ lines) - Self-improvement, planning, accuracy
@@ -435,7 +437,7 @@ All research objectives fully achieved with nine comprehensive phases:
   - 2025-updates.md (600+ lines) - 2025 models, MCP, memory
   - README.md (190+ lines) - Entry point and navigation
 
-Complete production-ready agentic workflow documentation with theoretical foundations, practical implementations, multi-agent architectures, API best practices, patterns/antipatterns, working code recipes, advanced optimization techniques (60-90% cost savings, 2-10× speedup, 85→99% accuracy), and industry-validated patterns. **Updated December 2025** with latest model capabilities (o3 88% ARC-AGI, Claude Opus 4.5 80.9% SWE-bench), browser agents (ChatGPT Agent, Claude Computer Use), MCP protocol ecosystem (2,000+ servers), memory innovations (Mem0 26% accuracy boost), comprehensive security patterns (prompt injection defense, sandboxing, HITL, compliance), and agent alignment research.
+Complete production-ready agentic workflow documentation with theoretical foundations, practical implementations, multi-agent architectures, API best practices, patterns/antipatterns, working code recipes, advanced optimization techniques (60-90% cost savings, 2-10× speedup, 85→99% accuracy), and industry-validated patterns. **Updated December 2025** with latest model capabilities (o3 88% ARC-AGI, Claude Opus 4.5 80.9% SWE-bench), browser agents (ChatGPT Agent, Claude Computer Use), MCP protocol ecosystem (2,000+ servers), memory innovations (Mem0 26% accuracy boost), comprehensive security patterns, agent alignment research, **and enterprise/future topics** including agent pricing models (Ibbaka Layer Cake), embodied robotics (Gemini Robotics 1.5, π0), edge computing (Cisco Unified Edge), agentic operating systems (Windows Agent Workspace), advanced governance (NIST AI RMF, AAGATE), and next-gen agent coordination patterns.
 
 ---
 
@@ -895,6 +897,32 @@ Complete production-ready agentic workflow documentation with theoretical founda
 - Updated testing: Braintrust trajectory evaluation, Loop scorer
 - Updated observability: Langfuse 19K+ stars
 
+### Phase 22: Enterprise & Future Topics (2025-12-26) ✅ COMPLETED
+- **Objective**: Complete Phase 18 identified missing topics for 2026 enterprise readiness
+- **Topics Added (Q87-Q96):**
+  - Q87: Agent Economics & Pricing Models (Ibbaka Layer Cake framework)
+  - Q88: Embodied Agents & Robotics (Gemini Robotics 1.5, π0, Figure AI Helix)
+  - Q89: Edge & Distributed Agents (Cisco Unified Edge, sub-millisecond latency)
+  - Q90: Agentic Operating Systems (Windows Agent Workspace, MCP integration)
+  - Q91: Agent Governance Beyond EU AI Act (NIST AI RMF, AAGATE, Agent DIDs)
+  - Q92: Agent Personalization (Letta/MemGPT, self-editing memory)
+  - Q93: Agent Reasoning Verification (Formal methods, cross-validation)
+  - Q94: RAG to Agent Memory Evolution (Graphiti, temporal knowledge graphs)
+  - Q95: Agent Testing & CI/CD (Braintrust, trajectory evaluation)
+  - Q96: Multi-Agent Coordination Beyond MCP (LOKA, AutoGen patterns)
+- **Key Findings:**
+  - Ibbaka Layer Cake: Role + Access + Usage + Outcomes pricing framework
+  - Gemini Robotics 1.5: Cross-embodiment transfer (ALOHA → Apollo → Franka)
+  - Physical Intelligence π0: 42.3% out-of-box task progress
+  - Edge AI market: $20B (2024) → $269B (2032)
+  - Windows Agent Workspace: Isolated accounts, native MCP support
+  - AAGATE: Kubernetes-native governance for agentic AI
+  - 100ms delay can break agent reasoning loops
+- **Documentation Updated:**
+  - topics.md: 10 new questions (Q87-Q96)
+  - README.md: Updated to 96 questions, added new quick start links
+  - task.md: Updated coverage completeness to 100% for all Phase 18 topics
+
 ---
 
 ## Key Academic Papers to Track
@@ -961,9 +989,10 @@ research-with-claude-code/
 │   ├── multi-agent-patterns.md       # Supervisor, Swarm, Collaboration
 │   └── workflow-overview.md          # 12-stage workflow concepts
 │
-├── IMPLEMENTATION (2 files)
+├── IMPLEMENTATION (3 files)
 │   ├── api-optimization-guide.md     # Model selection, caching, cost, accuracy
-│   └── agentic-systems-cookbook.md   # 11 production recipes
+│   ├── agentic-systems-cookbook.md   # 11 production recipes
+│   └── agent-prompting-guide.md      # Single & multi-agent prompting
 │
 ├── EVALUATION & PARADIGMS (2 files)
 │   ├── evaluation-and-debugging.md   # Evaluation, tracing, improvement
@@ -985,28 +1014,28 @@ research-with-claude-code/
     └── talkshow-implementation-guide.md # Case study
 ```
 
-**Active: 14 documents | Archived: 9 documents**
+**Active: 15 documents | Archived: 9 documents**
 
 ---
 
 ## Summary Statistics
 
-### Current State (After Phase 9-17)
+### Current State (After Phase 9-19)
 | Metric | Value |
 |--------|-------|
-| Active Documents | 14 |
+| Active Documents | 15 |
 | Archived Documents | 9 (in /archive) |
-| Total Lines | ~12,000+ |
-| Code Examples | ~35 key pseudocode patterns |
+| Total Lines | ~13,000+ |
+| Code Examples | ~40 key pseudocode patterns |
 | Duplicated Topics | 0 |
-| Knowledge Categories | 21 |
+| Knowledge Categories | 22 |
 | Academic Papers | 50+ citations |
 
 ### Document Inventory
 | Document | Type | Lines |
 |----------|------|-------|
-| README.md | Entry point | 200+ |
-| **topics.md** | Quick reference | **1700+** (expanded) |
+| README.md | Entry point | 240+ |
+| **topics.md** | Quick reference | **2970+** (86 questions) |
 | framework-comparison.md | Architecture | 330 |
 | workflow-overview.md | Workflow | 300+ |
 | multi-agent-patterns.md | Architecture | 1200+ |
@@ -1014,11 +1043,14 @@ research-with-claude-code/
 | security-essentials.md | Security | 390+ |
 | patterns-and-antipatterns.md | Patterns | 813 |
 | theoretical-foundations.md | Academic | 650+ |
-| 2025-updates.md | Updates | 600+ |
+| 2025-updates.md | Updates | 711 |
 | agentic-systems-cookbook.md | Recipes | 873 |
 | evaluation-and-debugging.md | Evaluation | 450+ |
 | advanced-agent-paradigms.md | Paradigms | 500+ |
-| task.md | Meta/tracking | 1100+ |
+| **agent-prompting-guide.md** | Prompting | **2100+** |
+| **product-strategy-guide.md** | Product | **850+** (NEW) |
+| **developer-productivity-guide.md** | Developer | **950+** (NEW) |
+| task.md | Meta/tracking | 1600+ |
 
 ### Coverage Completeness
 | Category | Status |
@@ -1044,6 +1076,568 @@ research-with-claude-code/
 | **Multi-Modal Agents** | ✅ 100% complete (Phase 17) |
 | **A2A Protocol** | ✅ 100% complete (Phase 17) |
 | **Domain-Specific Agents** | ✅ 100% complete (Phase 17) |
+| **Agent Economics** | ✅ 100% complete (Phase 18 - Q87) |
+| **Embodied Agents & Robotics** | ✅ 100% complete (Phase 18 - Q88) |
+| **Edge & Distributed Agents** | ✅ 100% complete (Phase 18 - Q89) |
+| **Agentic Operating Systems** | ✅ 100% complete (Phase 18 - Q90) |
+| **Agent Governance (Beyond EU AI Act)** | ✅ 100% complete (Phase 18 - Q91) |
+| **Agent Reasoning Verification** | ✅ 100% complete (Phase 18 - Q93) |
+| **Agentic RAG Evolution** | ✅ 100% complete (Phase 18 - Q94) |
+| **Agent Personalization** | ✅ 100% complete (Phase 18 - Q92) |
+| **Agent CI/CD Pipelines** | ✅ 100% complete (Phase 18 - Q95) |
+| **Agent Coordination (Beyond MCP/A2A)** | ✅ 100% complete (Phase 18 - Q96) |
+| **Agent Prompting Guide** | ✅ 100% complete (Phase 19) |
+| **Product Strategy** | ✅ 100% complete (Phase 20) |
+| **Developer Productivity** | ✅ 100% complete (Phase 21) |
+
+---
+
+## Phase 18: Identified Missing Topics (December 2025 Deep Research)
+
+Based on comprehensive Perplexity deep research, the following topics are missing or need expansion for a complete 2026-ready knowledge base.
+
+### TIER 1: HIGH PRIORITY (Critical for 2026 Enterprise Readiness)
+
+#### 18.1 Agent Economics & Pricing Models
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Ibbaka Pricing Layer Cake | 4-layer framework: Role, Access, Usage, Outcomes | [Ibbaka Framework](https://www.ibbaka.com/ibbaka-market-blog/pricing-in-the-agent-economy) |
+| Token vs Task vs Outcome Pricing | Three distinct pricing models with tradeoffs | Token=vendor costs, Task=Cosine AI, Outcome=premium alignment |
+| Hybrid Pricing Models | Combining platform fees + usage + outcomes | 27%→41% adoption (2024-2025) |
+| Unit Economics | Cost per interaction, ROI frameworks | $0.25-0.50/interaction vs $3-6 humans |
+| Billing & Metering | Infrastructure for agent usage tracking | Essential for enterprise deployment |
+
+**Why Critical:** 75% of companies may invest in agentic AI by 2026 (Deloitte). Without pricing frameworks, deployment stalls.
+
+#### 18.2 Embodied Agents & Robotics Integration
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Gemini Robotics 1.5 | Embodied reasoning model, visual/spatial understanding | [Google Dev Blog](https://developers.googleblog.com/) |
+| Physical Intelligence π0.6 | Foundation models for physical world, 90%+ success rates | [Physical Intelligence](https://www.physicalintelligence.company) |
+| Figure AI Figure 03 | 3rd-gen humanoid, designed for mass manufacturing | [Figure AI](https://www.figure.ai/news/introducing-figure-03) |
+| Vision-Language-Action (VLA) | Models combining vision + language + physical actions | Next frontier of multimodal |
+| Helix AI | Figure's VLA model with 10 Gbps data offload | Fleet learning infrastructure |
+
+**Why Critical:** Robotics moving from labs to factories. Physical Intelligence: "production-ready reliability, not laboratory demonstrations."
+
+#### 18.3 Edge & Distributed Agents
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Cisco Unified Edge Platform | Compute + networking at edge for agentic AI | [Cisco Nov 2025](https://newsroom.cisco.com/) |
+| Edge Traffic Patterns | 25x more network traffic than chatbots | Fundamental architecture shift |
+| Sub-millisecond Latency | Real-time decision-making requirements | Fatal delays for time-sensitive scenarios |
+| Offline-First Agents | Continued operation during cloud outages | Critical for factory, retail, vehicles |
+| Distributed Agent Coordination | Multi-node architectures for edge+cloud | 75% enterprise data created at edge |
+
+**Why Critical:** >50% AI pilots stalling due to infrastructure constraints (WEF). Edge is the new frontier.
+
+#### 18.4 Agentic Operating Systems
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Agentic OS Concept | Intelligent middleware above enterprise apps | [Fluid AI](https://www.fluid.ai/blog/agentic-operating-system) |
+| Three-Layer Architecture | Context Layer → Reasoning Layer → Agentic Layer | Orchestrates legacy systems |
+| Windows Agent Workspace | Contained, policy-controlled environment | [Microsoft Ignite 2025](https://techcommunity.microsoft.com/) |
+| MCP in Windows | Standardized agent-to-tool connections | Public preview December 2025 |
+| Agent-Native Applications | Apps that assume agents as primary execution entities | Architectural inversion |
+
+**Why Critical:** Enterprises drowning in disconnected software. Agentic OS is the unifying layer.
+
+#### 18.5 Agent Governance (Beyond EU AI Act)
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| NIST AI RMF | Map, Measure, Manage, Govern (72 sub-categories) | [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) |
+| Continuous Governance | Real-time vs one-time compliance | Agents evolve in production |
+| Digital Identity for Agents | Verifiable identity, cryptographic receipts | Traceability requirements |
+| Agent Audit Trails | Immutable logs for every agent action | Regulatory compliance |
+| Cross-Organization Agents | Federation, trust networks, reputation systems | Inter-enterprise coordination |
+
+**Why Critical:** ACE: "EU AI Act requirements demand reinterpretation for autonomous systems."
+
+---
+
+### TIER 2: IMPORTANT (Needed for Production Maturity)
+
+#### 18.6 Agent Reasoning Verification
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Verified Code Reasoning | Formal methods + LLM reasoning validation | 65% verification, 75% hallucination catch |
+| AgentTrek | Trajectory synthesis from web tutorials | [arXiv:2412.09605](https://arxiv.org/abs/2412.09605) (ICLR 2025) |
+| Mind-Map Agent | Structured knowledge graph for reasoning context | [ACL 2025](https://aclanthology.org/2025.acl-long.1383/) |
+| o1 Reasoning Patterns | 6 types: SA, MR, DC, SR, CI, EC | [arXiv:2410.13639](https://arxiv.org/abs/2410.13639) |
+| Reasoning Token Allocation | Task-aware budgets (varies 10x across task types) | Cost/latency optimization |
+
+#### 18.7 Agentic RAG Evolution
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| RAG → Agentic RAG → Agent Memory | Evolution from read-only to read-write | [Leonie Monigatti Blog](https://www.leoniemonigatti.com/) |
+| Graphiti | Temporal knowledge graphs, bi-temporal model | [GitHub: getzep/graphiti](https://github.com/getzep/graphiti) |
+| Memory Bank (Google) | Managed long-term memory generation | Vertex AI Agent Builder |
+| Context Compaction | Summarize older events, preserve decisions | Extended time horizons |
+| Procedural/Episodic/Semantic Memory | Memory type partitioning | Different access patterns |
+
+#### 18.8 Agent Personalization & Preference Learning
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Real-Time Adaptation | Individual-level personalization at scale | [Exei AI](https://exei.ai/) |
+| Agentic Feedback Loops | Learning from recommendation acceptance/rejection | [arXiv:2410.20027](https://arxiv.org/abs/2410.20027) |
+| Letta/MemGPT Architecture | OS-inspired memory hierarchy | [Letta Blog](https://www.letta.com/blog/agent-memory) |
+| Proactive Engagement | Anticipating needs vs responding to requests | Next-gen personalization |
+| Omnichannel Context | Continuity across website, mobile, voice | Enterprise requirement |
+
+#### 18.9 Agent Testing & CI/CD Pipelines
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Braintrust | Native CI/CD, open-source evals | [Braintrust](https://www.braintrust.dev/) |
+| Promptfoo | YAML-driven configuration, semantic evaluation | Config-driven approach |
+| Arize Phoenix | Observability + evaluation | Production monitoring |
+| Non-Deterministic Testing | Task accomplishment vs exact output | Fundamental paradigm shift |
+| Drift Detection | Baseline metrics, automated degradation alerts | Slow failure detection |
+| Compliance Gates | Day-one audit logs, data access controls | Regulatory requirements |
+
+#### 18.10 Agent Coordination (Beyond MCP/A2A)
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| LOKA Orchestration | Identity + Security + Ethical Governance layers | [Sof.to Blog](https://sof.to/blog/) |
+| AutoGen Conversation Patterns | Hierarchical, Dynamic Group, FSM-based | [Microsoft AutoGen](https://microsoft.github.io/autogen/) |
+| Agent Identity Layer | Unique verifiable identities per agent | Traceability |
+| Ethical Governance Layer | Organizational values embedded in architecture | Beyond generic rationality |
+| Multi-Agent Conflict Resolution | Handling contradictory agent recommendations | Production requirement |
+
+---
+
+### TIER 3: FUTURE CONSIDERATIONS (2026+ Roadmap)
+
+#### 18.11 Long-Horizon Planning
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Plan-and-Act Framework | Separate Planner + Executor models | [arXiv:2503.09572](https://arxiv.org/abs/2503.09572) (ICML 2025) |
+| Planning Token Budgets | Thinking budget configuration | 57.58% WebArena-Lite success |
+| Multi-Day Task Planning | Resource scheduling over time | Calendar awareness |
+
+#### 18.12 Hybrid Symbolic-Neural Agents
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| Neurosymbolic AI Resurgence | Gary Marcus predictions for 2026 | [Substack](https://garymarcus.substack.com/) |
+| DeepSeek-R1-Zero | RL-only reasoning without SFT | [arXiv:2501.12948](https://arxiv.org/abs/2501.12948) |
+| Symbolic Constraints + Neural Flexibility | Bounded autonomy with adaptation | Reliability + flexibility |
+
+#### 18.13 Agent Simulation & Synthetic Environments
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| OSUniverse | Advancement over OSWorld, <2% error rate | [arXiv:2505.03570](https://arxiv.org/abs/2505.03570) |
+| SWE-PolyBench | Polyglot codebases evaluation | Amazon |
+| Synthetic Data Generation | 6-12 month timeline elimination | GDPR/HIPAA/CCPA compliant |
+
+#### 18.14 Workflow Automation Platforms
+| Topic | Description | Key Resources |
+|-------|-------------|---------------|
+| n8n vs Zapier | Developer control vs accessibility tradeoff | [n8n Blog](https://blog.n8n.io/) |
+| Vertex AI Agent Builder | Enhanced tool governance, HITL workflows | [Google Cloud](https://cloud.google.com/blog/) |
+| Context Compaction | Working across extended time horizons | Coherence without token bloat |
+
+---
+
+### Implementation Recommendations
+
+**Phase 18.A: Quick Wins (Add to topics.md)**
+1. Agent Economics section with pricing framework comparison
+2. Edge Agents section with latency/infrastructure requirements
+3. Agent Governance section expanding beyond EU AI Act
+4. CI/CD for Agents section with tool comparison
+
+**Phase 18.B: New Document Creation**
+1. `embodied-agents.md` - Robotics integration guide
+2. `agent-operations.md` - Enterprise deployment, governance, testing
+
+**Phase 18.C: Document Updates**
+1. Update `2025-updates.md` with Agentic OS developments
+2. Update `framework-comparison.md` with edge deployment patterns
+3. Update `security-essentials.md` with governance beyond compliance
+
+---
+
+---
+
+## Phase 19: Agent Prompting Guide ✅ COMPLETED (2025-12-25)
+
+**Objective:** Create comprehensive documentation for prompting single agents and multi-agent systems, covering best practices, patterns, and evaluation frameworks.
+
+### 19.1 Single Agent Prompting
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| System Prompt Design | Core identity, capabilities, constraints | Persona, goals, boundaries |
+| Role Specification | Defining agent expertise and perspective | Expert roles, domain context |
+| Capability Boundaries | What agent can/cannot do | Tool availability, knowledge limits |
+| Output Format Control | Structured responses, JSON schemas | Format enforcement, validation |
+| Behavioral Guidelines | Tone, style, error handling | Guardrails, fallback behaviors |
+| Few-Shot Examples | In-context learning patterns | Example quality, diversity |
+
+### 19.2 Multi-Agent System Prompting
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Agent Orchestration Prompts | Coordinating multiple agents | Supervisor prompts, routing logic |
+| Handoff Protocols | Agent-to-agent communication | Context transfer, state passing |
+| Conflict Resolution | Handling contradictory outputs | Consensus mechanisms, arbitration |
+| Specialized Agent Prompts | Domain-specific agent design | Researcher, coder, reviewer, critic |
+| Team Dynamics | Multi-agent collaboration patterns | Debate, peer review, parallel work |
+| Shared Context Management | Common knowledge across agents | Memory prompts, context windows |
+
+### 19.3 Advanced Prompting Techniques
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Chain-of-Thought Prompting | Step-by-step reasoning | "Think step by step", reasoning traces |
+| ReAct Prompting | Reasoning + Action patterns | Thought-Action-Observation loops |
+| Tool Use Prompts | Function calling instructions | Tool descriptions, parameter schemas |
+| Self-Reflection Prompts | Agent self-improvement | Critique, revision, learning |
+| Meta-Prompting | Prompts that generate prompts | Dynamic prompt construction |
+| Constitutional AI Prompts | Value alignment in prompts | Principles, red lines, ethical bounds |
+
+### 19.4 Prompt Evaluation & Testing
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Prompt Benchmarking | Measuring prompt effectiveness | Success rates, quality metrics |
+| A/B Testing Prompts | Comparing prompt variants | Statistical significance, sample size |
+| Prompt Regression Testing | Detecting prompt degradation | Baseline metrics, drift detection |
+| LLM-as-Judge for Prompts | Automated prompt evaluation | Evaluation criteria, rubrics |
+| Human Evaluation | Expert assessment frameworks | Inter-rater reliability, guidelines |
+| Prompt Debugging | Diagnosing prompt failures | Trace analysis, failure patterns |
+
+### 19.5 Production Prompt Patterns
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Prompt Templating | Reusable prompt components | Variables, placeholders, composition |
+| Prompt Versioning | Managing prompt evolution | Version control, rollback |
+| Prompt Caching Strategies | Optimizing for cache hits | Static prefix design, reordering |
+| Prompt Compression | Reducing token count | Distillation, abbreviation |
+| Multi-Model Prompts | Different prompts for different models | Model-specific optimization |
+| Prompt Security | Injection-resistant design | Delimiter strategies, input validation |
+
+### 19.6 Agent Arena & Evaluation Support
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Benchmark Prompt Design | Prompts for standard benchmarks | SWE-bench, GAIA, WebArena |
+| Agent Competition Prompts | Adversarial evaluation | Red teaming, capability probing |
+| Leaderboard Optimization | Prompts for benchmark performance | Task-specific tuning |
+| Cross-Model Comparison | Fair evaluation across models | Normalized prompts, controlled variables |
+| Human Baseline Comparison | Prompts for human-AI comparison | Equivalent task framing |
+
+### Documentation Plan
+
+**Primary Document: `agent-prompting-guide.md`**
+
+**Proposed Structure:**
+```
+1. Introduction: Why Prompt Engineering for Agents Matters
+2. Single Agent Prompting Fundamentals
+   - System prompt anatomy
+   - Role and capability definition
+   - Output format and validation
+   - Common patterns with examples
+3. Multi-Agent System Prompting
+   - Orchestrator/supervisor prompts
+   - Specialist agent prompts (by domain)
+   - Handoff and coordination prompts
+   - Conflict resolution patterns
+4. Advanced Techniques
+   - Chain-of-Thought for agents
+   - ReAct implementation
+   - Self-reflection and improvement
+   - Constitutional AI integration
+5. Tool Use Prompting
+   - Function calling best practices
+   - Tool description optimization
+   - Error handling in tools
+6. Production Patterns
+   - Prompt templating systems
+   - Version control strategies
+   - Caching optimization
+   - Security hardening
+7. Evaluation & Testing
+   - Prompt benchmarking methods
+   - A/B testing frameworks
+   - Regression detection
+   - LLM-as-Judge setup
+8. Quick Reference
+   - Prompt templates by use case
+   - Checklists for prompt review
+   - Common antipatterns to avoid
+```
+
+**Key Academic References to Include:**
+- Prompt Engineering Guide (DAIR.AI)
+- OpenAI Prompt Engineering Best Practices
+- Anthropic Claude Prompting Guide
+- LangChain Agent Prompting
+- Multi-agent prompting research (arXiv papers)
+- LMSYS Chatbot Arena prompting insights
+
+**Implementation Priority:**
+1. ✅ Add Phase 19 to task.md (this update)
+2. ✅ Research latest prompting techniques via Perplexity
+3. ✅ Create `agent-prompting-guide.md` with full content (750+ lines)
+4. ✅ Add Q61-Q66 to topics.md for prompting quick reference
+5. ✅ Update README.md with new document
+
+---
+
+## Phase 20: Product Strategy for AI/Agent Development (COMPLETED ✅)
+
+**Objective:** Create comprehensive documentation for product managers and technical leaders to make better strategic decisions in the LLM and agent development space.
+
+### 20.1 Build vs Buy Decision Framework
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Custom Agent Development | When to build in-house agents | Team expertise, competitive advantage, data sensitivity |
+| Agent Platforms | Using existing platforms (LangGraph, CrewAI, AutoGen) | Time-to-market, maintenance burden, vendor lock-in |
+| API-First Approach | Using OpenAI/Anthropic/Google APIs directly | Simplicity, cost, flexibility |
+| Hybrid Strategy | Combining platforms with custom components | Best of both worlds, integration complexity |
+| Total Cost of Ownership | Full cost analysis over 3-5 years | Development, maintenance, scaling, migration |
+
+### 20.2 Technology Stack Selection
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Model Selection Strategy | Choosing foundation models for different use cases | GPT-4o vs Claude vs Gemini, cost/capability tradeoffs |
+| Framework Evaluation | Comparing agent frameworks systematically | LangGraph (control), CrewAI (simplicity), AutoGen (enterprise) |
+| Infrastructure Decisions | Cloud vs edge, managed vs self-hosted | Latency requirements, data residency, cost |
+| Memory & Storage | Choosing memory systems (Mem0, GraphRAG, vector DBs) | Persistence needs, query patterns, scale |
+| Observability Stack | LangSmith vs Langfuse vs custom | Tracing, evaluation, debugging capabilities |
+
+### 20.3 Roadmap Planning for AI/Agent Features
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| MVP Definition | Minimum viable agent capabilities | Core use case, success metrics, iteration plan |
+| Feature Prioritization | RICE/ICE scoring for agent features | Impact, confidence, effort estimation |
+| Capability Milestones | Progressive agent sophistication | Single → Multi-agent, Tool use, Memory, Autonomy levels |
+| Platform vs Feature | When to invest in platform vs features | Technical debt balance, reusability |
+| Integration Roadmap | Connecting agents to existing systems | API design, data pipelines, authentication |
+
+### 20.4 ROI Analysis & Business Case
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Cost-Benefit Framework | Quantifying agent ROI | $0.25-0.50/interaction vs $3-6 human baseline |
+| Productivity Metrics | Measuring developer/team efficiency gains | Time saved, throughput, quality improvements |
+| Break-Even Analysis | When agent investment pays off | ~50,000 interactions annually typical threshold |
+| Risk-Adjusted ROI | Accounting for failure/rework costs | Confidence intervals, scenario planning |
+| Competitive Advantage | Strategic value beyond cost savings | Speed to market, new capabilities, customer experience |
+
+### 20.5 Risk Management
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Technical Risks | Model degradation, API changes, vendor lock-in | Mitigation strategies, fallback plans |
+| Operational Risks | Hallucinations, security vulnerabilities, compliance | Testing, monitoring, incident response |
+| Business Risks | Market timing, adoption barriers, competition | Pilot programs, phased rollout |
+| Team Risks | Skill gaps, key person dependencies | Training, documentation, redundancy |
+| Regulatory Risks | EU AI Act, GDPR, industry-specific | Compliance checkpoints, legal review |
+
+### 20.6 Team Structure & Hiring
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Agent Engineering Roles | New role definitions for AI-native teams | Agent Engineer, Prompt Engineer, ML Platform |
+| Skill Requirements | Core competencies for agent development | LLM expertise, system design, evaluation |
+| Team Composition | Optimal team structure by project size | 2-person MVP, 5-person production, scaled teams |
+| Training Programs | Upskilling existing engineers | Prompt engineering, agent patterns, evaluation |
+| Hiring Strategy | Build vs hire for AI talent | Market competition, remote vs onsite, contractor use |
+
+### 20.7 Vendor Evaluation
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Model Provider Comparison | OpenAI vs Anthropic vs Google vs Open Source | Pricing, capabilities, reliability, roadmap |
+| Platform Comparison | Agent platforms (LangChain, CrewAI, Microsoft, AWS) | Features, maturity, support, ecosystem |
+| Evaluation Criteria | Systematic vendor assessment | Technical fit, business terms, strategic alignment |
+| Contract Considerations | Key terms for AI vendor agreements | Rate limits, SLAs, data usage, exit clauses |
+| Migration Planning | Switching costs and lock-in avoidance | Abstraction layers, multi-vendor strategy |
+
+### Documentation Plan
+
+**Primary Document: `product-strategy-guide.md`**
+
+**Proposed Structure:**
+```
+1. Introduction: Why Product Strategy Matters for AI/Agents
+2. Build vs Buy Decision Framework
+   - Decision tree for agent development approaches
+   - TCO calculator framework
+   - Case studies by company size
+3. Technology Stack Selection
+   - Model comparison matrix (updated monthly)
+   - Framework selection guide
+   - Infrastructure decision tree
+4. Roadmap Planning
+   - Agent capability maturity model
+   - Feature prioritization templates
+   - Integration patterns
+5. Business Case & ROI
+   - ROI calculation templates
+   - Productivity measurement framework
+   - Risk-adjusted analysis
+6. Risk Management
+   - Risk registry template
+   - Mitigation strategies by risk type
+   - Compliance checklist
+7. Team & Organization
+   - Role definitions
+   - Hiring criteria
+   - Training curriculum
+8. Vendor Management
+   - Evaluation scorecard
+   - Contract checklist
+   - Migration playbook
+```
+
+**Topics.md Additions (Q71-Q78):**
+- Q71: How do I decide build vs buy for agents?
+- Q72: How do I evaluate agent frameworks?
+- Q73: How do I plan an agent development roadmap?
+- Q74: How do I calculate agent ROI?
+- Q75: What risks should I consider for agent projects?
+- Q76: How should I structure an agent development team?
+- Q77: How do I evaluate AI/agent vendors?
+- Q78: How do I avoid vendor lock-in?
+
+---
+
+## Phase 21: Developer Productivity with Cursor & Claude Code (COMPLETED ✅)
+
+**Objective:** Create comprehensive documentation for developers on using modern AI coding assistants (Cursor, Claude Code, Windsurf, Devin) effectively for production agent development.
+
+### 21.1 Cursor Best Practices
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Cursor Setup | Optimal configuration for agent development | Model selection, context settings, .cursorrules |
+| Cursor Composer | Using Composer for multi-file agent development | Agent mode, 8 parallel agents, git worktrees |
+| Cursor Chat | Effective prompting for code assistance | Context provision, iterative refinement |
+| Tab Completion | Maximizing autocomplete effectiveness | Accept patterns, context hints |
+| Cursor Rules | Custom rules for agent codebases | Project-specific patterns, code style enforcement |
+| Multi-File Editing | Large-scale refactoring with Cursor | Dependency tracking, test maintenance |
+
+### 21.2 Claude Code Best Practices
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Claude Code Setup | Installation, authentication, configuration | API keys, model selection, settings |
+| Claude Code Workflow | Effective development patterns | Task decomposition, iterative development |
+| Extended Thinking | Using thinking tokens for complex problems | Budget allocation, when to enable |
+| Tool Use | Leveraging Claude's tool capabilities | File editing, terminal, web search |
+| Context Management | Maximizing context window effectiveness | File selection, summarization, focus |
+| CLAUDE.md | Project configuration for Claude Code | Memory, custom instructions, context |
+
+### 21.3 Windsurf & Cascade Best Practices
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Windsurf Cascade | Using Cascade for agentic development | Flow control, memory system |
+| MCP Integration | Model Context Protocol in Windsurf | MCP store, custom servers |
+| Flow-Based Development | Designing agent workflows in Windsurf | State management, checkpoints |
+| Windsurf vs Cursor | When to use which tool | Strengths, weaknesses, use cases |
+
+### 21.4 Devin & Autonomous Agents
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Devin 2.0 | Using Devin for autonomous development | Task delegation, review workflow |
+| DeepWiki Integration | Knowledge base integration | Documentation, context enhancement |
+| Parallel Devins | Multiple agent coordination | Task splitting, merge strategies |
+| Human-AI Collaboration | Effective oversight patterns | Review checkpoints, intervention points |
+
+### 21.5 Production Development Workflows
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Agent Development Lifecycle | From prototype to production | Stages, checkpoints, artifacts |
+| Testing with AI Assistants | Writing and maintaining tests | Test generation, coverage, TDD |
+| Code Review Workflow | AI-assisted code review | Pre-commit checks, PR review |
+| Debugging Complex Agents | Using AI for debugging | Trace analysis, hypothesis testing |
+| Refactoring Patterns | Large-scale codebase changes | Safe refactoring, regression prevention |
+
+### 21.6 Configuration & Settings
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| .cursorrules Files | Project-specific Cursor configuration | Rules format, common patterns |
+| CLAUDE.md Files | Claude Code project configuration | Memory, instructions, context |
+| MCP Servers | Custom tool integration | Server development, deployment |
+| Context Files | Managing context for large codebases | .cursorignore, context selection |
+| API Key Management | Secure credential handling | Environment variables, secrets |
+
+### 21.7 Multi-Agent Development Patterns
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Building Agents with AI Assistants | Using AI to build AI agents | Meta-development patterns |
+| Agent Testing Frameworks | Testing agent behavior with AI | Simulation, evaluation, coverage |
+| Agent Debugging | Diagnosing agent issues with AI assistance | Trace analysis, hypothesis testing |
+| Agent Optimization | Performance tuning with AI | Profiling, bottleneck identification |
+| Documentation Generation | Auto-generating agent documentation | API docs, user guides, examples |
+
+### 21.8 Team Collaboration
+| Topic | Description | Key Concepts |
+|-------|-------------|--------------|
+| Shared Configurations | Team-wide AI assistant settings | Standardization, onboarding |
+| Context Sharing | Sharing project context across team | CLAUDE.md, .cursorrules templates |
+| Code Style Enforcement | Consistent code with AI | Linting rules, style guides |
+| Knowledge Capture | Documenting AI-assisted decisions | Decision logs, pattern libraries |
+| Onboarding with AI | Using AI assistants for onboarding | Codebase exploration, context building |
+
+### Documentation Plan
+
+**Primary Document: `developer-productivity-guide.md`**
+
+**Proposed Structure:**
+```
+1. Introduction: AI-Assisted Development for Agents
+2. Cursor for Agent Development
+   - Setup and configuration
+   - Composer workflow for multi-file editing
+   - .cursorrules templates for agent projects
+   - Best practices and common patterns
+3. Claude Code for Agent Development
+   - Setup and CLAUDE.md configuration
+   - Extended thinking for complex problems
+   - Tool use and automation
+   - Context management strategies
+4. Windsurf & Other Tools
+   - Cascade for agentic development
+   - MCP integration
+   - Tool comparison and selection
+5. Production Workflows
+   - Development lifecycle
+   - Testing strategies
+   - Code review patterns
+   - Debugging techniques
+6. Configuration Templates
+   - .cursorrules examples for agent projects
+   - CLAUDE.md templates
+   - MCP server configurations
+7. Team Collaboration
+   - Shared configurations
+   - Onboarding guides
+   - Knowledge management
+8. Quick Reference
+   - Command cheatsheets
+   - Common prompts
+   - Troubleshooting guide
+```
+
+**Topics.md Additions (Q79-Q86):**
+- Q79: How do I set up Cursor for agent development?
+- Q80: How do I use Claude Code effectively?
+- Q81: What should go in .cursorrules for agent projects?
+- Q82: What should go in CLAUDE.md for agent projects?
+- Q83: How do I debug agents with AI assistants?
+- Q84: How do I write tests for agents with AI help?
+- Q85: How do I collaborate on agent codebases with AI tools?
+- Q86: How do I choose between Cursor, Claude Code, and Windsurf?
+
+---
+
+### Key Statistics from Research
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Enterprise AI spending 2025 | $37B (3.2x from 2024) | Menlo Ventures |
+| Companies adopting agents | 79% | PwC |
+| Hybrid pricing adoption | 27%→41% | B2B pricing research |
+| AI pilots stalling on infrastructure | >50% | WEF |
+| Enterprise data at edge | 75% annually | Cisco |
+| Physical Intelligence success rate | 90%+ | π0.6 model |
+| Figure AI manufacturing target | 12,000→100,000 robots | BotQ facility |
+| Verified reasoning success | 65% validation, 75% hallucination catch | Academic research |
+| Agent trajectory synthesis cost | $0.55/trajectory | AgentTrek |
+| WebArena-Lite with Plan-and-Act | 57.58% | ICML 2025 |
 
 ---
 

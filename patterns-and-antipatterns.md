@@ -1019,6 +1019,21 @@ result = response.choices[0].message.parsed  # Type-safe
 
 ---
 
+---
+
+## Related Documents
+
+| Document | Relationship |
+|----------|--------------|
+| [multi-agent-patterns.md](multi-agent-patterns.md) | Architecture patterns this document's antipatterns apply to |
+| [evaluation-and-debugging.md](evaluation-and-debugging.md) | Debugging techniques for the failure modes described here |
+| [workflow-overview.md](workflow-overview.md) | 12-stage workflow where these patterns apply |
+| [agent-prompting-guide.md](agent-prompting-guide.md) | Prompt design patterns that prevent specification failures |
+| [security-essentials.md](security-essentials.md) | Security patterns for tool sandboxing and input validation |
+| [theoretical-foundations.md](theoretical-foundations.md) | Academic research on agent coordination and reasoning |
+
+---
+
 **This guide is based on:** 1,642 multi-agent execution traces, academic research (arXiv:2503.13657, arXiv:2509.06822, DoVer), production deployments (LinkedIn, Uber, Replit, Elastic, Zapier), official API documentation (Anthropic, OpenAI, Google ADK).
 
 **Key Sources:**
@@ -1028,4 +1043,4 @@ result = response.choices[0].message.parsed  # Type-safe
 - Databricks Context Research
 - MCP Security Timeline (authzed.com)
 
-**Last Updated:** 2025-12-25
+**Last Updated:** 2025-12-26
