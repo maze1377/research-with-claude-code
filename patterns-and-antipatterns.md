@@ -2511,6 +2511,573 @@ When investigating agent failures, use this systematic approach:
 
 ---
 
+## 11. 12-Factor Agent Principles (HumanLayer)
+
+**Production-ready agent development principles adapted from the 12-Factor App methodology for AI agents.**
+
+Based on [HumanLayer's 12-Factor Agents](https://github.com/humanlayer/12-factor-agents) - battle-tested patterns for building reliable, maintainable AI agents at scale.
+
+### 11.1 Overview: Why 12 Factors?
+
+The original 12-Factor App methodology revolutionized cloud-native development. Similarly, these 12 factors address the unique challenges of AI agent development:
+
+| Challenge | Traditional Software | AI Agents |
+|-----------|---------------------|-----------|
+| **Control Flow** | Deterministic | Non-deterministic LLM decisions |
+| **State** | Database/cache | Context window + external state |
+| **Errors** | Stack traces | Token-limited error context |
+| **Testing** | Unit/integration tests | Behavior evaluation, hallucination detection |
+| **Deployment** | CI/CD pipelines | Prompt versioning + model versioning |
+
+### 11.2 The 12 Factors
+
+#### Factor 1: Natural Language → Tool Calls
+
+**Principle:** LLMs are the universal translator between human intent and machine actions.
+
+```python
+# ✅ GOOD: Let the LLM route intent to structured actions
+tools = [
+    {"name": "search_database", "parameters": {"query": "string"}},
+    {"name": "send_email", "parameters": {"to": "email", "subject": "string", "body": "string"}},
+    {"name": "schedule_meeting", "parameters": {"attendees": "list", "time": "datetime"}}
+]
+
+def agent_loop(user_request: str) -> dict:
+    response = llm.invoke(
+        messages=[{"role": "user", "content": user_request}],
+        tools=tools
+    )
+    return execute_tool(response.tool_calls[0])
+
+# ❌ BAD: Hardcoded intent classification
+def old_approach(user_request: str) -> dict:
+    if "search" in user_request.lower():
+        return search_database(extract_query(user_request))  # Brittle
+    elif "email" in user_request.lower():
+        return send_email(parse_email_params(user_request))  # Fragile
+```
+
+**Production Requirement:** Schema validation for all tool calls using Pydantic/JSON Schema.
+
+---
+
+#### Factor 2: Own Your Prompts
+
+**Principle:** Treat prompts as code. Version control, test, and review them.
+
+```python
+# ✅ GOOD: Prompts as first-class code artifacts
+# prompts/v2.3.1/customer_support.py
+
+SYSTEM_PROMPT = """
+You are a customer support agent for Acme Corp.
+
+## Capabilities
+- Look up order status
+- Process returns (< 30 days)
+- Escalate billing issues
+
+## Constraints
+- Never share internal pricing
+- Never promise refunds > $500 without approval
+- Always verify customer identity first
+
+## Response Format
+1. Acknowledge the issue
+2. State what action you're taking
+3. Set expectation for resolution
+"""
+
+# Version tracked, PR reviewed, A/B testable
+
+# ❌ BAD: Framework-managed prompts
+agent = SomeFramework.create_agent(
+    role="customer_support",  # Black box prompt
+    goals=["help customers"]   # No visibility
+)
+```
+
+**Production Requirement:** Prompt versioning in git, separate from code deployment.
+
+---
+
+#### Factor 3: Own Your Context Window
+
+**Principle:** Explicitly manage what enters the LLM's attention window. No framework magic.
+
+```python
+class ContextManager:
+    def __init__(self, max_tokens: int = 100000):
+        self.max_tokens = max_tokens
+        self.priority_content = []  # System prompt, critical instructions
+        self.working_memory = []     # Current task context
+        self.reference_memory = []   # Retrieved documents, history
+
+    def build_context(self) -> list:
+        """Explicit token budgeting"""
+        context = []
+        tokens_used = 0
+
+        # Priority 1: Always include critical content
+        for item in self.priority_content:
+            context.append(item)
+            tokens_used += self.count_tokens(item)
+
+        # Priority 2: Current task (most recent first)
+        for item in reversed(self.working_memory):
+            if tokens_used + self.count_tokens(item) > self.max_tokens * 0.7:
+                break
+            context.append(item)
+            tokens_used += self.count_tokens(item)
+
+        # Priority 3: Reference material (relevance-ranked)
+        remaining_budget = self.max_tokens - tokens_used
+        context.extend(self.select_references(remaining_budget))
+
+        return context
+
+# ❌ BAD: Implicit context accumulation
+messages.append(new_message)  # Context grows unbounded until truncation
+```
+
+**Production Requirement:** Token budgets per context category, explicit summarization triggers.
+
+---
+
+#### Factor 4: Tools Are Just Structured Outputs
+
+**Principle:** Every tool call is a validated JSON schema output. The tool boundary is your reliability boundary.
+
+```python
+from pydantic import BaseModel, Field
+
+class SearchDatabaseTool(BaseModel):
+    """Search the product database"""
+    query: str = Field(..., min_length=1, max_length=500)
+    filters: dict = Field(default_factory=dict)
+    limit: int = Field(default=10, ge=1, le=100)
+
+class ToolExecutor:
+    def execute(self, tool_call: dict) -> dict:
+        # 1. Validate schema
+        try:
+            validated = SearchDatabaseTool(**tool_call["arguments"])
+        except ValidationError as e:
+            return {"error": "Invalid tool call", "details": str(e)}
+
+        # 2. Execute with validated params
+        result = self.db.search(
+            query=validated.query,
+            filters=validated.filters,
+            limit=validated.limit
+        )
+
+        # 3. Validate output for context
+        return {"results": result[:validated.limit]}  # Bounded output
+```
+
+**Production Requirement:** 100% schema enforcement on tool inputs AND outputs.
+
+---
+
+#### Factor 5: Unify Execution State
+
+**Principle:** Single source of truth for agent state. External persistence, not in-memory.
+
+```python
+@dataclass
+class AgentState:
+    """All agent state in one place, externally persisted"""
+    session_id: str
+    task: str
+    status: Literal["pending", "running", "paused", "completed", "failed"]
+    messages: list[Message]
+    tool_results: dict[str, Any]
+    checkpoints: list[Checkpoint]
+    created_at: datetime
+    updated_at: datetime
+
+class StateManager:
+    def __init__(self, store: StateStore):  # Redis, PostgreSQL, etc.
+        self.store = store
+
+    def load(self, session_id: str) -> AgentState:
+        return self.store.get(f"agent:{session_id}")
+
+    def save(self, state: AgentState):
+        state.updated_at = datetime.now()
+        self.store.set(f"agent:{state.session_id}", state)
+
+    def checkpoint(self, state: AgentState, label: str):
+        """Save recovery point"""
+        state.checkpoints.append(Checkpoint(
+            label=label,
+            timestamp=datetime.now(),
+            state_snapshot=state.model_dump()
+        ))
+        self.save(state)
+```
+
+**Production Requirement:** State survives process restarts, enables debugging and replay.
+
+---
+
+#### Factor 6: Launch, Pause, and Resume
+
+**Principle:** Agents are interruptible state machines. Design for pause/resume from the start.
+
+```python
+class InterruptibleAgent:
+    def run(self, state: AgentState) -> AgentState:
+        while state.status == "running":
+            # Check for pause signal
+            if self.should_pause(state):
+                state.status = "paused"
+                self.state_manager.checkpoint(state, "pause_requested")
+                return state
+
+            # Execute one step
+            state = self.execute_step(state)
+
+            # Checkpoint after each step
+            self.state_manager.save(state)
+
+        return state
+
+    def resume(self, session_id: str) -> AgentState:
+        """Resume from last checkpoint"""
+        state = self.state_manager.load(session_id)
+        if state.status == "paused":
+            state.status = "running"
+        return self.run(state)
+
+    def execute_step(self, state: AgentState) -> AgentState:
+        """Single atomic step - can pause between any two steps"""
+        response = self.llm.invoke(state.messages)
+
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                result = self.execute_tool(tool_call)
+                state.tool_results[tool_call.id] = result
+                state.messages.append(ToolResult(tool_call.id, result))
+        else:
+            state.status = "completed"
+
+        return state
+```
+
+**Production Requirement:** Any agent can be paused/resumed without data loss.
+
+---
+
+#### Factor 7: Contact Humans with Tool Calls
+
+**Principle:** Human escalation is a tool, not an exception. Design it as a first-class action.
+
+```python
+class HumanEscalationTool(BaseModel):
+    """Request human intervention"""
+    reason: str = Field(..., description="Why human input is needed")
+    context: str = Field(..., description="Relevant context for the human")
+    options: list[str] = Field(default=None, description="Suggested options if applicable")
+    urgency: Literal["low", "medium", "high", "critical"] = "medium"
+    blocking: bool = Field(default=True, description="Whether to pause until response")
+
+tools = [
+    # ... other tools ...
+    {
+        "name": "request_human_input",
+        "description": "Use when: uncertain about interpretation, high-stakes decision, policy question, or explicitly requested",
+        "parameters": HumanEscalationTool.model_json_schema()
+    }
+]
+
+class HumanInTheLoop:
+    def execute_escalation(self, request: HumanEscalationTool) -> dict:
+        if request.blocking:
+            # Pause agent, await human response
+            ticket_id = self.create_escalation_ticket(request)
+            self.pause_agent(reason=f"Awaiting human: {ticket_id}")
+            return {"status": "paused", "ticket_id": ticket_id}
+        else:
+            # Continue with notification
+            self.notify_human(request)
+            return {"status": "notified", "continuing": True}
+```
+
+**Production Requirement:** 85-90% autonomous execution, 10-15% human escalation is optimal.
+
+---
+
+#### Factor 8: Own Your Control Flow
+
+**Principle:** Make loops, conditions, and routing explicit in code—not hidden in LLM reasoning.
+
+```python
+# ✅ GOOD: Explicit control flow
+class ExplicitWorkflow:
+    def run(self, task: str) -> dict:
+        # Step 1: Plan (explicit)
+        plan = self.planner.create_plan(task)
+
+        # Step 2: Execute each step (explicit loop)
+        for step in plan.steps:
+            if step.type == "tool_call":
+                result = self.execute_tool(step.tool, step.params)
+            elif step.type == "llm_reasoning":
+                result = self.llm.reason(step.prompt, step.context)
+            elif step.type == "human_review":
+                result = self.request_human_review(step.content)
+
+            # Explicit routing decision
+            if self.should_revise_plan(result):
+                plan = self.planner.revise(plan, result)
+
+        return self.synthesize_results(plan)
+
+# ❌ BAD: Hidden control flow
+def hidden_control_flow(task: str) -> dict:
+    return agent.run(task)  # What happens inside? When does it loop? When does it stop?
+```
+
+**Production Requirement:** Every loop has explicit termination conditions. Every branch is logged.
+
+---
+
+#### Factor 9: Compact Errors into Context
+
+**Principle:** Error handling must fit in the context window. Summarize, don't dump stack traces.
+
+```python
+class CompactErrorHandler:
+    MAX_ERROR_TOKENS = 500
+
+    def format_error(self, error: Exception, context: dict) -> str:
+        """Create context-window-friendly error summary"""
+
+        # Extract actionable information
+        error_summary = {
+            "type": type(error).__name__,
+            "message": str(error)[:200],
+            "recoverable": self.is_recoverable(error),
+            "suggested_action": self.suggest_recovery(error),
+            "relevant_context": self.extract_relevant_context(context, error)
+        }
+
+        # Format compactly
+        return f"""
+Error: {error_summary['type']} - {error_summary['message']}
+Recoverable: {error_summary['recoverable']}
+Suggested: {error_summary['suggested_action']}
+Context: {error_summary['relevant_context'][:300]}
+"""
+
+    def suggest_recovery(self, error: Exception) -> str:
+        recovery_map = {
+            "RateLimitError": "Wait and retry with exponential backoff",
+            "ValidationError": "Check input format against schema",
+            "TimeoutError": "Increase timeout or break into smaller tasks",
+            "AuthenticationError": "Verify credentials, may need human intervention"
+        }
+        return recovery_map.get(type(error).__name__, "Report to human for investigation")
+```
+
+**Production Requirement:** No error message exceeds token budget. All errors include recovery guidance.
+
+---
+
+#### Factor 10: Small, Focused Agents
+
+**Principle:** Single responsibility per agent. One job, done well.
+
+```python
+# ✅ GOOD: Focused agents
+class OrderLookupAgent:
+    """Only looks up orders. That's it."""
+    tools = [lookup_order_by_id, lookup_order_by_email, list_recent_orders]
+
+class RefundProcessorAgent:
+    """Only processes refunds. That's it."""
+    tools = [check_refund_eligibility, calculate_refund_amount, submit_refund]
+
+class EscalationAgent:
+    """Only escalates to humans. That's it."""
+    tools = [create_support_ticket, page_on_call, schedule_callback]
+
+# Coordinator routes between focused agents
+class CustomerSupportCoordinator:
+    def route(self, intent: str) -> Agent:
+        routing = {
+            "order_status": self.order_agent,
+            "refund_request": self.refund_agent,
+            "complaint": self.escalation_agent
+        }
+        return routing.get(intent, self.escalation_agent)
+
+# ❌ BAD: Monolithic agent
+class DoEverythingAgent:
+    tools = [
+        # 50+ tools
+        lookup_order, process_refund, send_email, schedule_meeting,
+        update_crm, generate_report, manage_inventory, ...
+    ]
+```
+
+**Production Requirement:** Each agent has 5-10 tools maximum. Clear boundaries.
+
+---
+
+#### Factor 11: Trigger from Anywhere
+
+**Principle:** Agents respond to HTTP, queues, cron, events—any invocation method.
+
+```python
+class UniversalAgentTrigger:
+    def __init__(self, agent: Agent, state_manager: StateManager):
+        self.agent = agent
+        self.state_manager = state_manager
+
+    # HTTP trigger
+    @app.post("/agent/invoke")
+    async def http_trigger(self, request: AgentRequest):
+        state = self.state_manager.create(request.task)
+        return await self.agent.run(state)
+
+    # Queue trigger (SQS, RabbitMQ, etc.)
+    @queue_consumer("agent-tasks")
+    async def queue_trigger(self, message: dict):
+        state = self.state_manager.create(message["task"])
+        return await self.agent.run(state)
+
+    # Cron trigger
+    @scheduler.cron("0 9 * * *")  # Daily at 9 AM
+    async def scheduled_trigger(self):
+        state = self.state_manager.create("daily_report")
+        return await self.agent.run(state)
+
+    # Event trigger (webhooks, Kafka, etc.)
+    @event_handler("order.created")
+    async def event_trigger(self, event: OrderCreatedEvent):
+        state = self.state_manager.create(f"process_order:{event.order_id}")
+        return await self.agent.run(state)
+
+    # Resume trigger
+    @app.post("/agent/resume/{session_id}")
+    async def resume_trigger(self, session_id: str):
+        state = self.state_manager.load(session_id)
+        return await self.agent.run(state)
+```
+
+**Production Requirement:** Same agent logic, any invocation method.
+
+---
+
+#### Factor 12: Stateless Reducers
+
+**Principle:** Agent steps are pure functions: `(state, event) → new_state`. Reproducible and testable.
+
+```python
+from typing import Callable
+
+# Type: (AgentState, Event) -> AgentState
+AgentReducer = Callable[[AgentState, Event], AgentState]
+
+def agent_step(state: AgentState, event: Event) -> AgentState:
+    """Pure function: given state and event, return new state"""
+
+    # No side effects in the reducer
+    new_state = state.model_copy(deep=True)
+
+    if event.type == "llm_response":
+        new_state.messages.append(event.message)
+        new_state.updated_at = event.timestamp
+
+    elif event.type == "tool_result":
+        new_state.tool_results[event.tool_id] = event.result
+        new_state.messages.append(ToolResultMessage(event.tool_id, event.result))
+
+    elif event.type == "human_input":
+        new_state.messages.append(HumanMessage(event.content))
+        if new_state.status == "paused":
+            new_state.status = "running"
+
+    return new_state
+
+# Side effects happen OUTSIDE the reducer
+class AgentExecutor:
+    def run(self, initial_state: AgentState):
+        state = initial_state
+
+        while state.status == "running":
+            # 1. Get LLM response (side effect)
+            response = self.llm.invoke(state.messages)
+
+            # 2. Update state (pure)
+            state = agent_step(state, Event(type="llm_response", message=response))
+
+            # 3. Execute tools if needed (side effect)
+            for tool_call in response.tool_calls:
+                result = self.execute_tool(tool_call)  # Side effect
+                state = agent_step(state, Event(type="tool_result", ...))  # Pure
+
+            # 4. Persist (side effect)
+            self.state_manager.save(state)
+
+        return state
+```
+
+**Production Requirement:** Agent logic is deterministic given same inputs. Enables replay debugging.
+
+---
+
+### 11.3 Factor-to-Failure-Mode Mapping
+
+| Factor | Prevents Failure Mode | Section Reference |
+|--------|----------------------|-------------------|
+| **1. NL → Tool Calls** | Brittle intent classification | §10.2 |
+| **2. Own Prompts** | Invisible prompt drift | §10.5 Klarna |
+| **3. Own Context** | Context rot, lost-in-middle | §10.8 |
+| **4. Tools as Outputs** | Schema violation crashes | §10.2 MetaGPT |
+| **5. Unified State** | State synchronization failures | §10.7 |
+| **6. Launch/Pause/Resume** | Unrecoverable sessions | §10.3 Replit |
+| **7. Human Tool Calls** | Missing escalation paths | §10.4 |
+| **8. Own Control Flow** | Hidden infinite loops | §10.2 BabyAGI |
+| **9. Compact Errors** | Context overflow from errors | §10.8 |
+| **10. Focused Agents** | Tool overload, confusion | §10.7 |
+| **11. Universal Triggers** | Single-point-of-failure invocation | §10.5 |
+| **12. Stateless Reducers** | Non-reproducible bugs | §10.6 |
+
+### 11.4 Implementation Checklist
+
+```
+□ Factor 1: All user intents route through LLM → tool call pipeline
+□ Factor 2: Prompts in version control with PR review
+□ Factor 3: Explicit token budgets per context category
+□ Factor 4: Pydantic/JSON Schema for all tool inputs/outputs
+□ Factor 5: State persisted externally (Redis/PostgreSQL)
+□ Factor 6: Checkpoint after every step, resume from any point
+□ Factor 7: Human escalation is a tool, not an exception handler
+□ Factor 8: All loops have explicit termination conditions
+□ Factor 9: Error messages under 500 tokens with recovery guidance
+□ Factor 10: Each agent has 5-10 focused tools max
+□ Factor 11: Same agent logic works via HTTP, queue, cron, events
+□ Factor 12: Agent step is pure function, side effects external
+```
+
+### 11.5 Maturity Assessment
+
+| Level | Factors Implemented | Characteristics |
+|-------|---------------------|-----------------|
+| **Level 1: Ad-hoc** | 0-3 | Prompt-based prototypes, no state management |
+| **Level 2: Structured** | 4-6 | Basic tool use, some state, manual recovery |
+| **Level 3: Reliable** | 7-9 | Human escalation, checkpointing, focused agents |
+| **Level 4: Production** | 10-12 | Full observability, universal triggers, reproducible |
+
+**Target:** Level 3 minimum for staging, Level 4 for production.
+
+---
+
 ## Related Documents
 
 | Document | Relationship |

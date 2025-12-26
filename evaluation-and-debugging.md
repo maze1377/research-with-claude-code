@@ -2963,6 +2963,348 @@ Before claiming an agent system is "production-ready," verify:
 
 ---
 
+## 12. Agent Maturity Model
+
+**A framework for assessing and improving AI agent capabilities across organizations.**
+
+### 12.1 Overview
+
+The Agent Maturity Model provides a structured approach to:
+- Assess current agent capabilities
+- Identify improvement priorities
+- Plan capability development
+- Benchmark against industry standards
+
+### 12.2 The Five Maturity Levels
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  L5: Self-Improving System                                           │
+│      Learning, adaptation, autonomous improvement                    │
+├─────────────────────────────────────────────────────────────────────┤
+│  L4: Collaborative Agent                                             │
+│      Multi-agent coordination, delegation, negotiation              │
+├─────────────────────────────────────────────────────────────────────┤
+│  L3: Autonomous Executor                                             │
+│      Dynamic tool selection, self-correction, goal pursuit          │
+├─────────────────────────────────────────────────────────────────────┤
+│  L2: Tool-Using Agent                                                │
+│      Multiple tools, explicit flow, structured outputs              │
+├─────────────────────────────────────────────────────────────────────┤
+│  L1: Script-Augmented                                                │
+│      Single LLM call, prompt engineering, no tools                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 12.3 Level Definitions
+
+#### Level 1: Script-Augmented
+
+**Characteristics:**
+- Single LLM API call per request
+- Fixed prompts, no tool use
+- Manual human review of all outputs
+- No state persistence
+
+**Typical Use Cases:**
+- Chat interfaces
+- Content summarization
+- Simple Q&A
+
+**Metrics:**
+| Metric | Threshold |
+|--------|-----------|
+| Response quality | LLM-as-judge >4/5 |
+| Latency | <5s |
+| Cost per request | <$0.01 |
+
+**Requirements for L1:**
+- [ ] Prompt versioning in git
+- [ ] Basic input validation
+- [ ] Response quality monitoring
+- [ ] Error handling for API failures
+
+---
+
+#### Level 2: Tool-Using Agent
+
+**Characteristics:**
+- Multiple tools/functions available
+- Explicit control flow
+- Schema-validated inputs/outputs
+- Basic error recovery
+
+**Typical Use Cases:**
+- Customer support with CRM lookup
+- Data retrieval and summarization
+- Simple automation tasks
+
+**Metrics:**
+| Metric | Threshold |
+|--------|-----------|
+| Tool selection accuracy | >90% |
+| Task completion rate | >85% |
+| Latency | <30s |
+| Cost per task | <$0.10 |
+
+**Requirements for L2:**
+- [ ] All L1 requirements
+- [ ] Tool schema validation (Pydantic/JSON Schema)
+- [ ] Tool execution logging
+- [ ] Retry logic with backoff
+- [ ] Tool permission boundaries
+- [ ] Basic observability (traces)
+
+---
+
+#### Level 3: Autonomous Executor
+
+**Characteristics:**
+- Dynamic tool selection based on context
+- Self-correction on errors
+- Multi-step planning and execution
+- State persistence across sessions
+- Human escalation as a tool
+
+**Typical Use Cases:**
+- Research and analysis agents
+- Code generation assistants
+- Workflow automation
+
+**Metrics:**
+| Metric | Threshold |
+|--------|-----------|
+| Task completion rate | >90% |
+| Self-correction success | >70% |
+| Human escalation rate | 10-15% |
+| Latency | <2 min typical |
+| Cost per task | <$1.00 |
+
+**Requirements for L3:**
+- [ ] All L2 requirements
+- [ ] Planning capability (decompose tasks)
+- [ ] State checkpointing and recovery
+- [ ] Human-in-the-loop integration
+- [ ] Context window management
+- [ ] Cost tracking and budgets
+- [ ] Full observability (traces, metrics, logs)
+- [ ] Automated evaluation on golden sets
+
+---
+
+#### Level 4: Collaborative Agent
+
+**Characteristics:**
+- Multi-agent coordination
+- Role-based specialization
+- Agent-to-agent communication
+- Shared state management
+- Conflict resolution
+
+**Typical Use Cases:**
+- Complex research with multiple sources
+- Software development teams
+- Enterprise workflow orchestration
+
+**Metrics:**
+| Metric | Threshold |
+|--------|-----------|
+| Inter-agent success rate | >85% |
+| Coordination overhead | <35% |
+| Cross-agent consistency | >90% |
+| End-to-end completion | >80% |
+| Cost per workflow | <$10.00 |
+
+**Requirements for L4:**
+- [ ] All L3 requirements
+- [ ] Agent orchestration framework
+- [ ] Shared state protocol (MCP/A2A)
+- [ ] Agent discovery and routing
+- [ ] Deadlock detection and prevention
+- [ ] Cross-agent audit trails
+- [ ] Performance profiling per agent
+- [ ] Load balancing and scaling
+
+---
+
+#### Level 5: Self-Improving System
+
+**Characteristics:**
+- Learning from interactions
+- Prompt/tool optimization
+- Performance self-monitoring
+- Capability expansion
+- Ethical guardrails
+
+**Typical Use Cases:**
+- Adaptive personal assistants
+- Continuous improvement systems
+- Research acceleration
+
+**Metrics:**
+| Metric | Threshold |
+|--------|-----------|
+| Performance improvement rate | >5%/month |
+| Regression rate | <1% |
+| Novel capability acquisition | Tracked |
+| Safety incident rate | 0 |
+
+**Requirements for L5:**
+- [ ] All L4 requirements
+- [ ] Feedback collection pipeline
+- [ ] A/B testing infrastructure
+- [ ] Model fine-tuning capability
+- [ ] Safety monitoring and kill switches
+- [ ] Drift detection
+- [ ] Compliance audit automation
+- [ ] Ethical review process
+
+---
+
+### 12.4 Assessment Framework
+
+**Capability Assessment Matrix:**
+
+| Dimension | L1 | L2 | L3 | L4 | L5 |
+|-----------|----|----|----|----|-----|
+| **Tool Use** | None | Fixed set | Dynamic | Shared | Learned |
+| **Planning** | None | Linear | Multi-step | Coordinated | Adaptive |
+| **State** | Stateless | Session | Persistent | Shared | Evolving |
+| **Error Handling** | Fail | Retry | Self-correct | Escalate | Learn |
+| **Human Interaction** | Review all | Approve some | Escalate rare | Monitor | Audit |
+| **Observability** | Logs | Traces | Metrics | Dashboards | Analytics |
+| **Testing** | Manual | Unit | Integration | E2E | Continuous |
+| **Security** | Basic | Sandboxed | Boundaries | Federated | Adaptive |
+
+**Scoring:**
+- Rate each dimension 1-5
+- Average = Current maturity level
+- Minimum = Bottleneck to address
+
+### 12.5 Maturity Assessment Checklist
+
+```markdown
+## L1 Assessment
+□ Prompts version-controlled
+□ Input validation implemented
+□ Response quality measured
+□ Error handling for API failures
+□ Basic logging in place
+
+## L2 Assessment
+□ Tool schemas defined and validated
+□ Tool execution logged and traced
+□ Retry logic with exponential backoff
+□ Permission boundaries enforced
+□ Observability platform connected
+
+## L3 Assessment
+□ Planning capability demonstrated
+□ State checkpointing works
+□ Human escalation tool functional
+□ Context budget managed
+□ Cost tracking operational
+□ Evaluation on golden sets automated
+□ Recovery from checkpoints tested
+
+## L4 Assessment
+□ Multi-agent orchestration operational
+□ Shared state protocol implemented
+□ Agent discovery working
+□ Deadlock prevention tested
+□ Cross-agent audit trails complete
+□ Load balancing functional
+□ Performance profiling per agent
+
+## L5 Assessment
+□ Feedback pipeline collecting data
+□ A/B testing infrastructure ready
+□ Fine-tuning capability available
+□ Safety monitoring active
+□ Drift detection operational
+□ Compliance audits automated
+□ Ethical review process defined
+```
+
+### 12.6 Progression Roadmap
+
+**L1 → L2 (2-4 weeks):**
+1. Define tool schemas with Pydantic
+2. Implement tool execution layer
+3. Add structured logging
+4. Set up basic observability
+5. Create tool permission system
+
+**L2 → L3 (4-8 weeks):**
+1. Implement planning module
+2. Add state persistence layer
+3. Build human escalation flow
+4. Create context manager
+5. Set up cost tracking
+6. Build evaluation pipeline
+
+**L3 → L4 (8-12 weeks):**
+1. Design agent orchestration
+2. Implement shared state protocol
+3. Build agent router
+4. Add coordination patterns
+5. Create cross-agent monitoring
+6. Implement scaling strategy
+
+**L4 → L5 (12+ weeks):**
+1. Build feedback collection
+2. Set up A/B infrastructure
+3. Implement fine-tuning pipeline
+4. Create safety monitoring
+5. Build drift detection
+6. Automate compliance
+
+### 12.7 Common Pitfalls by Level
+
+| Level | Pitfall | Prevention |
+|-------|---------|------------|
+| **L1** | No prompt versioning | Treat prompts as code |
+| **L2** | Tool overload | 5-10 tools max |
+| **L2** | No retry logic | Exponential backoff |
+| **L3** | Context overflow | Token budgeting |
+| **L3** | No escalation path | Human tool required |
+| **L4** | Deadlocks | Timeout + detection |
+| **L4** | State inconsistency | Single source of truth |
+| **L5** | Drift undetected | Continuous evaluation |
+| **L5** | Safety gaps | Kill switches mandatory |
+
+### 12.8 Industry Benchmarks (December 2025)
+
+| Industry | Typical Level | Leaders |
+|----------|---------------|---------|
+| **Customer Service** | L2-L3 | L3-L4 |
+| **Software Development** | L2-L3 | L4 |
+| **Financial Services** | L1-L2 | L3 |
+| **Healthcare** | L1 | L2 |
+| **E-commerce** | L2-L3 | L3-L4 |
+| **Research** | L3 | L4-L5 |
+
+**Enterprise Adoption Stats:**
+- 60% of enterprises at L1
+- 25% at L2
+- 12% at L3
+- 3% at L4
+- <1% at L5
+
+### 12.9 Maturity Model Quick Reference
+
+| Level | Key Capability | Primary Metric | Target |
+|-------|----------------|----------------|--------|
+| **L1** | Response quality | LLM-as-judge | >4/5 |
+| **L2** | Tool selection | Accuracy | >90% |
+| **L3** | Task completion | Success rate | >90% |
+| **L4** | Coordination | Inter-agent success | >85% |
+| **L5** | Improvement | Monthly gains | >5% |
+
+**Minimum Production Level:** L3 for autonomous agents, L2 for supervised assistants
+
+---
+
 ## Related Documents
 
 - [patterns-and-antipatterns.md](patterns-and-antipatterns.md) - Failure modes and fixes

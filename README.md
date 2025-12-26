@@ -1,8 +1,22 @@
 # Agentic AI Development Knowledge Base
 
-**Complete reference for building production multi-agent systems**
+**The definitive professional reference for AI agent developers**
 
-Last Updated: 2025-12-26 (Research Update) | 17 Documents | 90,000+ words | 60+ Academic References
+Last Updated: 2025-12-26 (Phase 25) | 17 Documents | 100,000+ words | 102 Q&A Topics | 60+ Academic References
+
+---
+
+## What's New (Phase 25)
+
+| Addition | Location | Description |
+|----------|----------|-------------|
+| **12-Factor Agents** | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) | Production-ready principles from HumanLayer |
+| **Decision Frameworks** | [topics.md](topics.md) Q82-Q87 | When to use agents, framework selection, autonomy levels |
+| **MCP & Claude SDK** | [topics.md](topics.md) Q88-Q92 | Anthropic ecosystem deep dive, skills, hooks |
+| **Hot Topics 2025** | [topics.md](topics.md) Q93-Q97 | Browser agents, voice agents, A2A, agentic RAG |
+| **Developer Essentials** | [topics.md](topics.md) Q98-Q102 | Skills, evaluation, security for agent developers |
+| **Architecture Blueprints** | [multi-agent-patterns.md](multi-agent-patterns.md) | 6 universal use cases with code |
+| **Agent Maturity Model** | [evaluation-and-debugging.md](evaluation-and-debugging.md) | L1-L5 maturity assessment framework |
 
 ---
 
@@ -11,25 +25,31 @@ Last Updated: 2025-12-26 (Research Update) | 17 Documents | 90,000+ words | 60+ 
 | I want to... | Go to |
 |--------------|-------|
 | **Build my first agent** | [topics.md](topics.md) → Getting Started (30 min) |
-| Get quick answers | [topics.md](topics.md) - 81 questions with answers |
-| Choose a framework | [topics.md](topics.md) → Framework Selection Decision Tree |
+| Get quick answers | [topics.md](topics.md) - 102 questions with answers |
+| **Decide: agent or automation?** | [topics.md](topics.md) → Q82 Decision Framework |
+| Choose a framework | [topics.md](topics.md) → Q84 Framework Selection Matrix |
+| **Learn 12-Factor Agents** | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) → Section 11 |
+| **Assess agent maturity** | [evaluation-and-debugging.md](evaluation-and-debugging.md) → Section 12 |
+| **Use reference architectures** | [multi-agent-patterns.md](multi-agent-patterns.md) → Section 11 Blueprints |
+| **Set up MCP** | [topics.md](topics.md) → Q88-Q89 MCP Protocol |
+| **Use Claude Code/SDK** | [topics.md](topics.md) → Q90-Q92 Anthropic Ecosystem |
 | Understand architectures | [framework-comparison.md](framework-comparison.md) |
 | Compare multi-agent patterns | [multi-agent-patterns.md](multi-agent-patterns.md) |
 | Avoid common failures | [patterns-and-antipatterns.md](patterns-and-antipatterns.md) |
 | Optimize costs | [api-optimization-guide.md](api-optimization-guide.md) |
 | Secure my agent | [security-essentials.md](security-essentials.md) |
-| Build voice/audio agents | [topics.md](topics.md) → Voice/Audio Agents |
+| Build voice/audio agents | [topics.md](topics.md) → Q96 Voice Agents |
 | Build coding agents | [topics.md](topics.md) → Coding/Developer Agents |
-| Build browser agents | [topics.md](topics.md) → Browser Automation Agents |
-| Add agent memory | [topics.md](topics.md) → Memory Systems (Mem0, GraphRAG) |
+| Build browser agents | [topics.md](topics.md) → Q93 Browser Agents |
+| Add agent memory | [topics.md](topics.md) → Q95 Agentic RAG |
 | Deploy at scale | [topics.md](topics.md) → Agent Orchestration at Scale |
 | Evaluate & debug | [evaluation-and-debugging.md](evaluation-and-debugging.md) |
 | **Write agent prompts** | [agent-prompting-guide.md](agent-prompting-guide.md) |
 | **Product strategy (PM)** | [product-strategy-guide.md](product-strategy-guide.md) |
 | **Use Cursor/Claude Code** | [developer-productivity-guide.md](developer-productivity-guide.md) |
 | See latest 2025 updates | [2025-updates.md](2025-updates.md) |
-| **Build for robotics** | [topics.md](topics.md) → Embodied Agents (Q73) |
-| **Deploy at edge** | [topics.md](topics.md) → Edge & Distributed Agents (Q74) |
+| **Build for robotics** | [topics.md](topics.md) → Q97 Embodied Agents |
+| **Deploy at edge** | [topics.md](topics.md) → Q86 Edge Deployment |
 | **Price AI agents** | [topics.md](topics.md) → Agent Pricing Models (Q72) |
 | Track research progress | [task.md](task.md) |
 
@@ -39,33 +59,41 @@ Last Updated: 2025-12-26 (Research Update) | 17 Documents | 90,000+ words | 60+ 
 
 ### Core Concepts (Start Here)
 ```
-topics.md                    # 81 critical questions answered
-├── PRACTICAL GUIDES (NEW)
+topics.md                    # 102 critical questions answered
+├── PRACTICAL GUIDES
 │   ├── Getting Started      # First agent in 30 minutes
 │   ├── Framework Decision   # Visual decision tree
 │   ├── Security Checklist   # Pre-deployment hardening
 │   └── Cost Estimation      # Pricing, ROI calculator
 │
-├── EMERGING TECH (NEW)
-│   ├── Voice/Audio Agents   # OpenAI Realtime, ElevenLabs
-│   ├── Multi-Modal Agents   # Vision + Text + Tools
-│   ├── A2A Protocol         # Agent-to-Agent (Google)
-│   ├── Real-Time Agents     # WebSocket, streaming
-│   ├── Browser Automation   # Operator, Claude Computer Use
-│   └── Memory Systems       # Mem0, GraphRAG
+├── DECISION FRAMEWORKS (NEW - Q82-Q87)
+│   ├── Agent vs Automation  # 5-question decision filter
+│   ├── Single vs Multi      # Complexity threshold
+│   ├── Framework Selection  # LangGraph, CrewAI, AutoGen matrix
+│   ├── Build vs Buy         # TCO scorecard
+│   ├── Cloud vs Edge        # Deployment decision tree
+│   └── Autonomy Levels      # L0-L4 spectrum
 │
-├── DOMAIN AGENTS (NEW)
-│   ├── Code Generation      # SWE-bench deep dive
-│   ├── Customer Support     # Klarna, Intercom patterns
-│   ├── Data Analysis        # PandasAI, natural language
-│   ├── Research/Writing     # Paper2Agent, multi-agent
-│   └── Coding Agents        # Cursor, Windsurf, Devin, Claude Code
+├── ANTHROPIC ECOSYSTEM (NEW - Q88-Q92)
+│   ├── MCP Protocol         # Model Context Protocol deep dive
+│   ├── Building MCP Servers # Python/TypeScript examples
+│   ├── Claude Agent SDK     # Extended thinking, caching
+│   ├── Computer Use         # Desktop automation
+│   └── Skills & Hooks       # Claude Code extension system
 │
-├── PRODUCTION (NEW)
-│   ├── Observability        # LangSmith, Langfuse, tracing
-│   ├── Deployment           # K8s, Agent Sandbox, Kagent
-│   ├── Testing              # Unit, Integration, E2E
-│   └── Orchestration        # Enterprise scale (10K+ agents)
+├── HOT TOPICS 2025 (NEW - Q93-Q97)
+│   ├── Browser Agents       # Operator, Computer Use, Browser Use
+│   ├── A2A Protocol         # Google agent interoperability
+│   ├── Agentic RAG          # Graphiti, temporal knowledge
+│   ├── Voice Agents         # Real-time, sub-200ms
+│   └── Embodied AI          # Robotics, VLA models
+│
+├── DEVELOPER ESSENTIALS (NEW - Q98-Q102)
+│   ├── Programming Skills   # Python, async, schemas
+│   ├── LLM Concepts         # Tokens, temperature, context
+│   ├── Framework Mastery    # LangGraph, CrewAI patterns
+│   ├── Evaluation           # Testing non-deterministic systems
+│   └── Security Skills      # OWASP LLM Top 10
 │
 ├── Business (Q1-6)          # Build vs buy, ROI, risks
 ├── Technical (Q7-12a)       # Architecture, state, tools
@@ -78,7 +106,7 @@ topics.md                    # 81 critical questions answered
 ├── Benchmarks (Q42-45)      # AgentBench, BFCL, SWE-bench+
 ├── Prompting (Q46-55)       # Single, multi-agent, LATS, Reflexion
 ├── Product & Dev Tools (Q56-71) # Strategy, Cursor, Claude Code
-└── Enterprise & Future (Q72-81) # Pricing, Robotics, Edge, Agentic OS (NEW)
+└── Enterprise & Future (Q72-81) # Pricing, Robotics, Edge, Agentic OS
 ```
 
 ### Architecture Patterns
@@ -87,16 +115,29 @@ multi-agent-patterns.md              # Multi-agent architectures
 ├── Collaboration Pattern            # 2-3 agents, shared context
 ├── Supervisor Pattern               # 3-5 agents, central control
 ├── Swarm Pattern                    # 5+ agents, dynamic routing
-└── Hierarchical Pattern             # Nested supervisors
+├── Hierarchical Pattern             # Nested supervisors
+│
+└── ARCHITECTURE BLUEPRINTS (NEW - Section 11)
+    ├── Customer Support Bot         # Coordinator + Workers
+    ├── Code Assistant               # Pipeline + Human-in-Loop
+    ├── Research Agent               # Parallel + Synthesis
+    ├── Data Analyst                 # Tool-Heavy Single Agent
+    ├── Workflow Automator           # Event-Driven Orchestrator
+    └── Content Generator            # Generator-Critic Loop
 ```
 
 ### Production Patterns
 ```
-patterns-and-antipatterns.md         # 14 failure modes + fixes
+patterns-and-antipatterns.md         # 14 failure modes + fixes + 12-Factor
 ├── Specification failures (35%)     # Vague goals, missing criteria
 ├── Role violations (28%)            # Agents ignoring boundaries
 ├── Context management (22%)         # Lost context, overflow
-└── Coordination failures (15%)      # Deadlocks, race conditions
+├── Coordination failures (15%)      # Deadlocks, race conditions
+│
+└── 12-FACTOR AGENTS (NEW - Section 11)
+    ├── Factor 1-4                   # NL→Tools, Prompts, Context, Schemas
+    ├── Factor 5-8                   # State, Pause/Resume, Human, Control
+    └── Factor 9-12                  # Errors, Focus, Triggers, Reducers
 ```
 
 ### Security & Safety
@@ -116,15 +157,15 @@ security-essentials.md               # Consolidated security guide
 ### Core Reference
 | Document | Lines | Purpose |
 |----------|-------|---------|
-| [topics.md](topics.md) | **3500+** | Quick reference - 81 questions + 19 guides |
-| [patterns-and-antipatterns.md](patterns-and-antipatterns.md) | 813 | 14 failure modes with fixes |
+| [topics.md](topics.md) | **4800+** | Quick reference - 102 Q&A + guides + decision frameworks |
+| [patterns-and-antipatterns.md](patterns-and-antipatterns.md) | **3100+** | 14 failure modes + 12-Factor Agents |
 | [theoretical-foundations.md](theoretical-foundations.md) | 650+ | Academic citations and theory |
 
 ### Architecture & Workflow
 | Document | Lines | Purpose |
 |----------|-------|---------|
 | [framework-comparison.md](framework-comparison.md) | 330 | LangGraph, CrewAI, AutoGPT comparison |
-| [multi-agent-patterns.md](multi-agent-patterns.md) | 1200+ | Multi-agent architectures |
+| [multi-agent-patterns.md](multi-agent-patterns.md) | **3600+** | Multi-agent architectures + 6 blueprints |
 | [workflow-overview.md](workflow-overview.md) | 300+ | 12-stage workflow (concepts) |
 
 ### Implementation
@@ -132,12 +173,12 @@ security-essentials.md               # Consolidated security guide
 |----------|-------|---------|
 | [api-optimization-guide.md](api-optimization-guide.md) | 550+ | Model selection, cost, performance |
 | [agentic-systems-cookbook.md](agentic-systems-cookbook.md) | 873 | 11 production recipes |
-| [agent-prompting-guide.md](agent-prompting-guide.md) | **2100+** | Single & multi-agent prompting (LATS, Reflexion, frameworks) |
+| [agent-prompting-guide.md](agent-prompting-guide.md) | **2100+** | Single & multi-agent prompting |
 
-### Evaluation & Debugging (NEW)
+### Evaluation & Debugging
 | Document | Lines | Purpose |
 |----------|-------|---------|
-| [evaluation-and-debugging.md](evaluation-and-debugging.md) | 450+ | Evaluation, tracing, improvement loops |
+| [evaluation-and-debugging.md](evaluation-and-debugging.md) | **3300+** | Evaluation, tracing + Agent Maturity Model |
 | [advanced-agent-paradigms.md](advanced-agent-paradigms.md) | 500+ | Self-improvement, planning, learning |
 
 ### Security
@@ -146,11 +187,11 @@ security-essentials.md               # Consolidated security guide
 | [security-essentials.md](security-essentials.md) | 390+ | Consolidated security (pseudocode) |
 | [security-research.md](security-research.md) | 3200+ | Full security research (reference) |
 
-### Product Strategy & Developer Productivity (NEW)
+### Product Strategy & Developer Productivity
 | Document | Lines | Purpose |
 |----------|-------|---------|
-| [product-strategy-guide.md](product-strategy-guide.md) | **850+** | Build vs buy, ROI, team structure, vendor evaluation |
-| [developer-productivity-guide.md](developer-productivity-guide.md) | **950+** | Cursor, Claude Code, Windsurf, Devin best practices |
+| [product-strategy-guide.md](product-strategy-guide.md) | **850+** | Build vs buy, ROI, team structure |
+| [developer-productivity-guide.md](developer-productivity-guide.md) | **950+** | Cursor, Claude Code, Windsurf best practices |
 
 ### 2025 Updates
 | Document | Lines | Purpose |
@@ -203,6 +244,31 @@ security-essentials.md               # Consolidated security guide
 ---
 
 ## Quick Reference
+
+### 12-Factor Agents (Production Essentials)
+```
+1. NL → Tool Calls           # LLM routes intent to structured actions
+2. Own Your Prompts          # Version control, PR review, A/B test
+3. Own Your Context          # Explicit token budgets, no magic
+4. Tools = Structured Output # Schema validation on everything
+5. Unify Execution State     # Single source of truth, external
+6. Launch/Pause/Resume       # Interruptible state machines
+7. Humans via Tool Calls     # Escalation as explicit tool
+8. Own Control Flow          # Explicit loops, not LLM decisions
+9. Compact Errors            # Fit in context, include recovery
+10. Small Focused Agents     # 5-10 tools max, single job
+11. Trigger from Anywhere    # HTTP, queue, cron, events
+12. Stateless Reducers       # Pure function: (state, event) → state
+```
+
+### Agent Maturity Levels
+```
+L1: Script-Augmented      # Single LLM call, no tools
+L2: Tool-Using Agent      # Multiple tools, explicit flow
+L3: Autonomous Executor   # Self-correction, planning (MIN PRODUCTION)
+L4: Collaborative Agent   # Multi-agent coordination
+L5: Self-Improving        # Learning, adaptation
+```
 
 ### Architecture Selection
 ```

@@ -3477,6 +3477,1413 @@ Code Commit → Lint/Static → Unit Tests → Agent Eval → Drift Check → De
 
 ---
 
+## Decision Frameworks for AI Agent Development
+
+### Q82: When Should I Use AI Agents vs Traditional Automation?
+
+**Context:** Not every problem needs an AI agent. Use this 5-question filter to decide.
+
+**The 5-Question Decision Filter:**
+
+| Question | If YES → Agent | If NO → Traditional |
+|----------|----------------|---------------------|
+| **1. Does the task require real-time adaptation?** | Environment changes unpredictably | Fixed rules handle all cases |
+| **2. Is the solution space genuinely ambiguous?** | Multiple valid approaches | Single correct answer |
+| **3. Do we benefit from autonomous decision-making?** | Human bottleneck is costly | Human review is fast/cheap |
+| **4. Is natural language understanding required?** | Unstructured inputs | Structured data/APIs |
+| **5. Are errors recoverable and low-stakes?** | Can retry with feedback | Mistakes are catastrophic |
+
+**Score Interpretation:**
+- **4-5 YES**: Strong agent candidate
+- **2-3 YES**: Consider hybrid (agent + rules)
+- **0-1 YES**: Traditional automation wins
+
+**Cost-Benefit Quick Check:**
+```
+Traditional: $0.01-0.10/task, deterministic, <100ms latency
+Agent: $0.10-1.00/task, variable, 1-30s latency
+
+Break-even: When human decision cost > $10/decision
+```
+
+**Red Flags (Don't Use Agents):**
+- Tasks with fixed rules and no decision-making
+- Speed-critical operations (<500ms required)
+- Sensitive data where hallucination is unacceptable
+- Regulatory requirements for deterministic behavior
+- Well-defined input/output contracts
+
+**Sources:** HumanLayer 12-Factor Agents, Production deployments 2024-2025
+
+---
+
+### Q83: Single-Agent vs Multi-Agent Architecture?
+
+**Context:** Adding agents increases capability but also coordination overhead.
+
+**Complexity Threshold Framework:**
+
+| Factor | Single Agent | Multi-Agent |
+|--------|--------------|-------------|
+| **Tool count** | 5-10 tools | 10+ tools (split across agents) |
+| **Domain breadth** | 1-2 related domains | 3+ distinct domains |
+| **Workflow length** | <10 sequential steps | 10+ steps or parallel paths |
+| **Expertise required** | Generalist sufficient | Specialist knowledge needed |
+| **Error isolation** | Acceptable if one failure = all failure | Need independent recovery |
+
+**Decision Matrix:**
+
+```
+             LOW COMPLEXITY          HIGH COMPLEXITY
+           ┌───────────────────────┬───────────────────────┐
+ LOW       │   Single Agent        │   Multi-Agent         │
+ EXPERTISE │   (simple assistant)  │   (parallel workers)  │
+           ├───────────────────────┼───────────────────────┤
+ HIGH      │   Single Expert Agent │   Specialized Swarm   │
+ EXPERTISE │   (focused domain)    │   (coordinator + experts) │
+           └───────────────────────┴───────────────────────┘
+```
+
+**Coordination Overhead Tax:**
+- 2 agents: ~20% overhead
+- 3-5 agents: ~35% overhead
+- 6+ agents: ~50%+ overhead
+
+**Rule of Thumb:** If unsure, start single-agent. Add agents only when:
+1. Single agent exceeds tool limit (10+)
+2. Context window overflow (>100K tokens per task)
+3. Need parallel execution for speed
+4. Domain expertise requires specialization
+
+**Sources:** MAST Dataset analysis, LangGraph production patterns
+
+---
+
+### Q84: Which Framework Should I Choose?
+
+**Context:** Framework selection depends on your control needs and team expertise.
+
+**Framework Selection Matrix:**
+
+| If You Need... | Choose | Why |
+|----------------|--------|-----|
+| **Maximum control over execution** | LangGraph | Graph-based state machine, explicit routing |
+| **Role-based collaboration** | CrewAI | Pre-built role templates, delegation |
+| **Research/experimentation** | AutoGen | Flexible conversation patterns |
+| **Enterprise integration** | Semantic Kernel | Microsoft ecosystem, .NET support |
+| **Production observability** | LangGraph + LangSmith | Best tracing, evaluation, debugging |
+| **Rapid prototyping** | CrewAI | Fastest time-to-first-agent |
+| **Complex state management** | LangGraph | Checkpointing, persistence, human-in-loop |
+
+**Framework Comparison (December 2025):**
+
+| Framework | Strengths | Weaknesses | Best For |
+|-----------|-----------|------------|----------|
+| **LangGraph** | Control, observability, production-ready | Steeper learning curve | Production systems |
+| **CrewAI** | Easy setup, role abstraction | Less control, harder debugging | Quick MVPs |
+| **AutoGen** | Flexible, research-oriented | Complex setup, less production tooling | Research, experimentation |
+| **Semantic Kernel** | Enterprise, .NET/Java | Smaller community | Microsoft shops |
+| **Google ADK** | Gemini integration, A2A protocol | New, less mature | Google ecosystem |
+
+**Team Expertise Considerations:**
+- Python strong → LangGraph, CrewAI, AutoGen
+- TypeScript preferred → LangGraph.js
+- .NET/Enterprise → Semantic Kernel
+- Google Cloud → ADK
+
+**Migration Path:**
+```
+Prototype → Production Path:
+CrewAI MVP → LangGraph (when needing control)
+AutoGen Research → LangGraph (when productionizing)
+```
+
+**Sources:** Framework documentation, GitHub stars, production case studies
+
+---
+
+### Q85: Build vs Buy for Agent Platforms?
+
+**Context:** When to build custom agent infrastructure vs use managed platforms.
+
+**Build vs Buy Scorecard:**
+
+| Factor | Score for BUILD | Score for BUY |
+|--------|-----------------|---------------|
+| **Differentiation** | Core product feature | Supporting functionality |
+| **Scale** | 1M+ monthly invocations | <100K monthly invocations |
+| **Team size** | 5+ ML/AI engineers | <3 ML engineers |
+| **Time-to-market** | 6+ months acceptable | <3 months needed |
+| **Customization** | Unique requirements | Standard patterns work |
+| **Data sensitivity** | Cannot leave infrastructure | Cloud-acceptable |
+
+**Platform Landscape (December 2025):**
+
+| Category | Examples | Best For |
+|----------|----------|----------|
+| **Managed Agent Platforms** | OpenAI Assistants, Google Vertex AI Agents, Amazon Bedrock Agents | Quick deployment, less control |
+| **Orchestration Frameworks** | LangGraph, CrewAI, AutoGen | Custom logic, full control |
+| **Observability** | LangSmith, Arize Phoenix, Braintrust | Evaluation, debugging |
+| **Infrastructure** | Modal, Replicate, Baseten | Model serving, scaling |
+
+**Hybrid Approach (Recommended):**
+```
+BUY: Infrastructure, LLM APIs, observability
+BUILD: Business logic, prompts, orchestration
+```
+
+**Total Cost of Ownership:**
+- Build: $200-500K first year (team + infra)
+- Buy: $50-150K first year (platform fees)
+- Hybrid: $100-250K first year (best balance)
+
+**When to Definitely Build:**
+- Agent behavior IS the product (not a feature)
+- Regulatory requirements for on-premise
+- Unique interaction patterns not supported by platforms
+- Need deep integration with proprietary systems
+
+**Sources:** Enterprise deployment case studies, TCO analysis
+
+---
+
+### Q86: Cloud vs Edge Deployment for Agents?
+
+**Context:** Where to run agent inference affects latency, cost, and privacy.
+
+**Deployment Decision Tree:**
+
+```
+                    ┌─────────────────────┐
+                    │ Latency <500ms      │
+                    │ Required?           │
+                    └─────────┬───────────┘
+                              │
+                    ┌─────────▼───────────┐
+            YES     │                     │   NO
+           ┌────────┤                     ├────────┐
+           │        │ Offline Required?   │        │
+           ▼        └─────────────────────┘        ▼
+    ┌──────────┐                            ┌──────────┐
+    │   EDGE   │                            │  CLOUD   │
+    └──────────┘                            └──────────┘
+```
+
+**Edge Deployment Considerations:**
+
+| Factor | Edge | Cloud |
+|--------|------|-------|
+| **Latency** | 10-100ms | 500ms-5s |
+| **Privacy** | Data stays local | Data transits network |
+| **Cost** | Higher per-device | Pay-per-use |
+| **Model size** | Limited (3B-8B params) | Unlimited |
+| **Offline capable** | Yes | No |
+| **Updates** | Complex deployment | Instant |
+
+**Edge-Appropriate Use Cases:**
+- Real-time robotics control
+- Factory floor automation
+- Vehicle systems (sub-100ms decisions)
+- Healthcare devices (data privacy)
+- Retail POS (offline-capable)
+
+**Cloud-Appropriate Use Cases:**
+- Complex reasoning (large models)
+- Multi-turn conversations
+- Document processing
+- Research and analysis
+- Training and fine-tuning
+
+**Hybrid Architecture Pattern:**
+```
+Edge: Fast decisions, privacy-sensitive
+  ↓ (escalation)
+Cloud: Complex reasoning, training
+  ↓ (model updates)
+Edge: Improved local models
+```
+
+**Key Statistics:**
+- 75% of enterprise data created at edge (Cisco)
+- Edge agents generate 25x more network traffic than chatbots
+- Sub-200ms latency required for real-time voice agents
+
+**Sources:** Cisco Edge AI research, WEF infrastructure analysis
+
+---
+
+### Q87: How Much Autonomy Should I Grant Agents?
+
+**Context:** Balancing automation benefits with risk control.
+
+**Autonomy Spectrum Framework:**
+
+| Level | Description | Human Role | Use When |
+|-------|-------------|------------|----------|
+| **L0** | Suggestion only | Decides everything | High stakes, learning system |
+| **L1** | Recommend + explain | Approves major actions | Medium stakes, building trust |
+| **L2** | Auto-execute with veto | Reviews, can override | Low-medium stakes, proven system |
+| **L3** | Fully autonomous | Monitors, handles exceptions | Low stakes, mature system |
+| **L4** | Autonomous + delegates | Strategic oversight only | Routine operations, high volume |
+
+**Risk-Based Autonomy Assignment:**
+
+| Action Risk | Reversibility | Autonomy Level |
+|-------------|---------------|----------------|
+| Low | Reversible | L3-L4 (auto-execute) |
+| Low | Irreversible | L2 (veto window) |
+| Medium | Reversible | L2 (veto window) |
+| Medium | Irreversible | L1 (approval required) |
+| High | Any | L0-L1 (human decides) |
+| Critical | Any | L0 + multi-approval |
+
+**Progressive Autonomy Pattern:**
+1. Start at L0 for all new agents
+2. Track success rate over 100+ actions
+3. Promote to L1 when >95% success
+4. Promote to L2 when >99% success for 1 month
+5. Promote to L3 only for routine, low-risk actions
+
+**Optimal Ratio (Production Research):**
+- 85-90% autonomous execution
+- 10-15% human escalation
+- Lower autonomy = higher latency, less scale
+- Higher autonomy = higher risk, less control
+
+**Red Flags for Reducing Autonomy:**
+- Error rate increases >2%
+- User complaints about agent decisions
+- Edge cases not handled gracefully
+- Model drift detected
+
+**Sources:** HumanLayer 12-Factor Agents, Google Cloud trust patterns
+
+---
+
+## MCP, Claude SDK, and Anthropic Ecosystem
+
+### Q88: What is MCP (Model Context Protocol) and Why Use It?
+
+**Context:** MCP is Anthropic's open standard for connecting AI models to external tools and data sources.
+
+**MCP Architecture Overview:**
+
+```
+┌─────────────────┐     JSON-RPC 2.0     ┌─────────────────┐
+│   MCP Host      │◄────────────────────►│   MCP Server    │
+│   (Claude,      │                       │   (Tools,       │
+│    Cursor,      │   Transport Layer     │    Resources,   │
+│    IDE)         │   (stdio/SSE/HTTP)    │    Prompts)     │
+└─────────────────┘                       └─────────────────┘
+```
+
+**Why MCP Matters:**
+
+| Before MCP | With MCP |
+|------------|----------|
+| Custom integration per tool | Universal connector |
+| N×M integration matrix | N+M linear scaling |
+| Vendor lock-in | Portable across hosts |
+| Inconsistent security | Standardized trust model |
+
+**Key Statistics (December 2025):**
+- 28% Fortune 500 companies using MCP
+- 2,000+ community MCP servers
+- 10,000+ stars on GitHub
+- Supported by: Anthropic, Zed, Replit, Sourcegraph, Block, Apollo
+
+**MCP Capabilities:**
+
+| Capability | Description | Example |
+|------------|-------------|---------|
+| **Resources** | Expose data sources | Database tables, file systems |
+| **Tools** | Expose callable functions | API calls, calculations |
+| **Prompts** | Reusable prompt templates | Domain-specific instructions |
+| **Sampling** | Request LLM completions | Nested agent calls |
+
+**When to Use MCP:**
+- Building tools that work across multiple AI platforms
+- Need standardized security and permission model
+- Want community-built integrations (databases, APIs, services)
+- Require audit trails for tool usage
+
+**Quick Start:**
+```python
+# Install MCP server for your use case
+# Example: filesystem server
+pip install mcp-server-filesystem
+
+# Run server
+mcp-server-filesystem /path/to/directory
+
+# Configure in Claude Desktop settings.json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": ["/path/to/directory"]
+    }
+  }
+}
+```
+
+**Sources:** [Anthropic MCP Docs](https://modelcontextprotocol.io/), [MCP GitHub](https://github.com/modelcontextprotocol)
+
+---
+
+### Q89: How Do I Build Custom MCP Servers?
+
+**Context:** Create your own MCP servers to expose tools and resources to AI models.
+
+**MCP Server Structure (Python):**
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+# Initialize server
+mcp = FastMCP("my-server")
+
+# Define a tool
+@mcp.tool()
+def search_database(query: str, limit: int = 10) -> list[dict]:
+    """Search the product database.
+
+    Args:
+        query: Search query string
+        limit: Maximum results to return
+    """
+    # Your implementation
+    return db.search(query, limit)
+
+# Define a resource
+@mcp.resource("products://{product_id}")
+def get_product(product_id: str) -> str:
+    """Get product details by ID."""
+    product = db.get_product(product_id)
+    return json.dumps(product)
+
+# Define a prompt template
+@mcp.prompt()
+def customer_support_prompt(issue_type: str) -> str:
+    """Generate customer support prompt."""
+    return f"""You are a customer support agent handling {issue_type}.
+
+    Guidelines:
+    - Be helpful and empathetic
+    - Escalate billing issues
+    - Never share internal pricing
+    """
+
+# Run the server
+if __name__ == "__main__":
+    mcp.run()
+```
+
+**TypeScript Version:**
+
+```typescript
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+const server = new McpServer({
+  name: "my-server",
+  version: "1.0.0",
+});
+
+server.tool("search_database",
+  { query: "string", limit: "number" },
+  async ({ query, limit }) => {
+    const results = await db.search(query, limit);
+    return { content: [{ type: "text", text: JSON.stringify(results) }] };
+  }
+);
+
+server.run();
+```
+
+**Best Practices:**
+1. **Descriptive docstrings** - LLM uses them for tool selection
+2. **Type hints** - Enable schema validation
+3. **Error handling** - Return structured errors, not exceptions
+4. **Idempotency** - Tools may be called multiple times
+5. **Bounded outputs** - Limit response size for context window
+
+**Testing MCP Servers:**
+```bash
+# Use MCP Inspector for debugging
+npx @anthropic-ai/mcp-inspector my-server
+
+# Test with Claude Desktop
+# Add to settings.json, restart Claude
+```
+
+**Sources:** [MCP SDK](https://github.com/modelcontextprotocol/python-sdk), [FastMCP](https://github.com/anthropics/mcp-server-examples)
+
+---
+
+### Q90: What is Claude Agent SDK and Extended Thinking?
+
+**Context:** Anthropic's SDK for building agents with advanced reasoning capabilities.
+
+**Claude Agent SDK Philosophy:**
+- **Computer-as-interface**: Agent sees screens, not APIs
+- **Extended thinking**: Longer reasoning for complex problems
+- **Tool use**: Structured function calling
+- **Human-in-the-loop**: Native escalation patterns
+
+**Extended Thinking Usage:**
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-5-20250514",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000  # Allocate tokens for reasoning
+    },
+    messages=[{
+        "role": "user",
+        "content": "Analyze this complex system architecture and identify bottlenecks..."
+    }]
+)
+
+# Access thinking process
+thinking = response.content[0].thinking
+answer = response.content[1].text
+
+print(f"Reasoning:\n{thinking}\n\nAnswer:\n{answer}")
+```
+
+**When to Use Extended Thinking:**
+- Complex multi-step reasoning
+- Mathematical proofs
+- Code architecture decisions
+- Strategic planning
+- When you need to "show work"
+
+**Extended Thinking Guidelines:**
+- Budget 5,000-20,000 tokens for thinking
+- Thinking content is charged at input rates
+- Works best with Claude Sonnet 4.5 and Opus 4.5
+- Don't use for simple Q&A (waste of tokens)
+
+**Prompt Caching for Cost Reduction:**
+
+```python
+# Cache static content (90% cost reduction on cache hits)
+response = client.messages.create(
+    model="claude-sonnet-4-5-20250514",
+    max_tokens=1024,
+    system=[{
+        "type": "text",
+        "text": long_system_prompt,
+        "cache_control": {"type": "ephemeral"}  # Cache this
+    }],
+    messages=[{"role": "user", "content": user_query}]
+)
+
+# Cache statistics
+print(f"Cache read: {response.usage.cache_read_input_tokens}")
+print(f"Cache write: {response.usage.cache_creation_input_tokens}")
+```
+
+**Cost Savings with Caching:**
+- Cache read: 90% cheaper than input
+- Cache write: 25% more expensive (one-time)
+- Break-even: 2 cache reads per write
+- TTL: 5 minutes (refreshed on hit)
+
+**Sources:** [Anthropic API Docs](https://docs.anthropic.com/), [Claude Cookbook](https://github.com/anthropics/anthropic-cookbook)
+
+---
+
+### Q91: How Do I Use Claude Computer Use?
+
+**Context:** Claude can interact with computers visually, controlling desktop applications.
+
+**Computer Use Architecture:**
+
+```
+┌────────────────┐         ┌────────────────┐
+│     Claude     │◄───────►│  Computer Use  │
+│   (Reasoning)  │  Vision │    Runtime     │
+└────────────────┘ + Tools └───────┬────────┘
+                                   │
+                        ┌──────────▼──────────┐
+                        │     Virtual/Local    │
+                        │       Desktop        │
+                        └─────────────────────┘
+```
+
+**Computer Use Tools:**
+
+| Tool | Purpose |
+|------|---------|
+| `computer` | Mouse, keyboard, screenshots |
+| `text_editor` | View and edit files |
+| `bash` | Run shell commands |
+
+**Basic Computer Use Example:**
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-5-20250514",
+    max_tokens=4096,
+    tools=[
+        {
+            "type": "computer_20250124",
+            "name": "computer",
+            "display_width_px": 1920,
+            "display_height_px": 1080,
+            "display_number": 0,
+        },
+        {
+            "type": "bash_20250124",
+            "name": "bash",
+        },
+        {
+            "type": "text_editor_20250124",
+            "name": "text_editor",
+        },
+    ],
+    messages=[{
+        "role": "user",
+        "content": "Open Chrome and search for 'Claude API documentation'"
+    }]
+)
+```
+
+**Safety Considerations:**
+- Run in sandboxed environment (Docker/VM)
+- Never give access to sensitive credentials
+- Log all actions for audit
+- Implement action approval for high-risk operations
+- Set strict timeouts
+
+**Computer Use Performance (OSWorld Benchmark):**
+- Claude Computer Use: 61.4%
+- OpenAI Operator: 38.1%
+- Best for: Form filling, web navigation, data extraction
+
+**When to Use Computer Use:**
+- Automating legacy applications without APIs
+- Web scraping complex JavaScript sites
+- GUI testing and automation
+- Data entry from visual sources
+- Interacting with SaaS applications
+
+**Sources:** [Computer Use Docs](https://docs.anthropic.com/en/docs/computer-use), [OSWorld Benchmark](https://os-world.github.io/)
+
+---
+
+### Q92: What are Claude Code Skills and Hooks?
+
+**Context:** Extend Claude Code's capabilities with custom skills and event hooks.
+
+**Skills System:**
+Skills are reusable capability modules that extend Claude Code's behavior.
+
+```markdown
+# Example: custom-skill.md (placed in .claude/skills/)
+
+name: database-expert
+description: Expert knowledge for PostgreSQL optimization
+
+triggers:
+  - "optimize query"
+  - "database performance"
+  - "slow query"
+
+instructions: |
+  When analyzing database queries:
+  1. Check for missing indexes
+  2. Look for N+1 query patterns
+  3. Suggest EXPLAIN ANALYZE
+  4. Recommend connection pooling
+```
+
+**Hooks System:**
+Hooks are event handlers that run before/after Claude Code actions.
+
+```json
+// .claude/hooks.json
+{
+  "pre-commit": {
+    "command": "npm run lint && npm run test",
+    "description": "Run linting and tests before commit"
+  },
+  "post-edit": {
+    "command": "prettier --write ${file}",
+    "description": "Format file after edit"
+  },
+  "on-error": {
+    "command": "notify-slack 'Claude Code error: ${error}'",
+    "description": "Alert on errors"
+  }
+}
+```
+
+**Available Hook Events:**
+- `pre-commit`: Before git commit
+- `post-commit`: After git commit
+- `pre-edit`: Before file edit
+- `post-edit`: After file edit
+- `on-error`: On any error
+- `on-tool-call`: Before tool execution
+
+**CLAUDE.md Context File:**
+Project-specific context loaded automatically:
+
+```markdown
+# CLAUDE.md (in project root)
+
+## Project Context
+This is a FastAPI backend for e-commerce.
+
+## Conventions
+- Use Pydantic v2 for validation
+- SQLAlchemy 2.0 async patterns
+- pytest for testing
+
+## Important Files
+- src/main.py: Application entry
+- src/models/: Database models
+- src/api/: Route handlers
+
+## Forbidden
+- Never modify .env files
+- Never delete migration files
+```
+
+**Best Practices:**
+1. Keep CLAUDE.md under 2000 tokens
+2. Use skills for reusable expertise
+3. Use hooks for automation
+4. Version control all configuration
+5. Test hooks in safe environment first
+
+**Sources:** [Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code)
+
+---
+
+## Hot Topics in AI Agent Development (December 2025)
+
+### Q93: What are Browser Agents and How Do They Work?
+
+**Context:** Browser agents automate web interactions without traditional APIs.
+
+**Browser Agent Landscape (December 2025):**
+
+| Agent | Provider | Approach | Performance |
+|-------|----------|----------|-------------|
+| **Operator** | OpenAI | Cloud-hosted browser | 38.1% OSWorld |
+| **Computer Use** | Anthropic | Vision + desktop control | 61.4% OSWorld |
+| **Claude for Chrome** | Anthropic | Extension-based | In development |
+| **Browser Use** | Open source | Playwright + LLM | Variable |
+
+**How Browser Agents Work:**
+
+```
+┌──────────────┐     Screenshot      ┌──────────────┐
+│   Browser    │────────────────────►│     LLM      │
+│              │                     │   (Vision)   │
+│              │◄────────────────────│              │
+└──────────────┘     Actions         └──────────────┘
+                  (click, type,
+                   scroll, etc.)
+```
+
+**Key Capabilities:**
+- Navigate websites visually
+- Fill forms and submit data
+- Extract information from pages
+- Handle authentication flows
+- Work with JavaScript-heavy sites
+
+**Use Cases:**
+- E-commerce automation (price tracking, purchasing)
+- Research data collection
+- Form filling and data entry
+- Legacy system integration
+- Testing and QA automation
+
+**Challenges:**
+- CAPTCHA handling
+- Authentication persistence
+- Rate limiting detection
+- Dynamic content waiting
+- Error recovery
+
+**Implementation Pattern:**
+
+```python
+from browser_use import Agent
+
+async def book_flight():
+    agent = Agent(
+        task="Book a flight from NYC to LA for next Friday",
+        model="claude-sonnet-4.5"
+    )
+
+    result = await agent.run()
+    return result
+```
+
+**Sources:** OSWorld benchmark, OpenAI Operator docs, Browser Use GitHub
+
+---
+
+### Q94: What is the A2A Protocol (Agent-to-Agent)?
+
+**Context:** Google's standard for agent interoperability and discovery.
+
+**A2A vs MCP:**
+
+| Aspect | MCP | A2A |
+|--------|-----|-----|
+| **Focus** | Tool access | Agent discovery |
+| **Scope** | Single agent ↔ tools | Agent ↔ Agent |
+| **Provider** | Anthropic | Google |
+| **Maturity** | Production | Early adoption |
+| **Relationship** | Complementary | Complementary |
+
+**A2A Core Concepts:**
+
+```
+┌─────────────┐     Agent Card     ┌─────────────┐
+│   Agent A   │────────────────────►│   Agent B   │
+│             │   (capabilities,    │             │
+│             │    endpoints,       │             │
+│             │◄───────────────────│             │
+└─────────────┘    inputs/outputs)  └─────────────┘
+```
+
+**Agent Card Structure:**
+```json
+{
+  "name": "Research Agent",
+  "description": "Searches and synthesizes information",
+  "version": "1.0.0",
+  "capabilities": ["web_search", "document_analysis"],
+  "inputs": {
+    "query": "string",
+    "sources": "array"
+  },
+  "outputs": {
+    "summary": "string",
+    "citations": "array"
+  },
+  "endpoint": "https://api.example.com/agents/research"
+}
+```
+
+**When to Use A2A:**
+- Building agent marketplaces
+- Cross-organization agent collaboration
+- Standardizing agent interfaces
+- Agent discovery and selection
+- Multi-vendor agent ecosystems
+
+**Combined MCP + A2A Pattern:**
+```
+User Request
+     │
+     ▼
+┌─────────────────┐     A2A      ┌─────────────────┐
+│  Orchestrator   │─────────────►│  External Agent │
+│     Agent       │              │  (discovered)   │
+└────────┬────────┘              └─────────────────┘
+         │
+         │ MCP
+         ▼
+┌─────────────────┐
+│   Local Tools   │
+│  (databases,    │
+│   APIs, files)  │
+└─────────────────┘
+```
+
+**Sources:** Google A2A announcement, ADK documentation
+
+---
+
+### Q95: What is Agentic RAG and How Does It Differ from Traditional RAG?
+
+**Context:** Evolution from read-only retrieval to intelligent memory systems.
+
+**RAG Evolution:**
+
+| Generation | Capability | Limitation |
+|------------|------------|------------|
+| **RAG 1.0** | Retrieve + Generate | Static knowledge, no learning |
+| **RAG 2.0** | + Re-ranking, hybrid search | Still read-only |
+| **Agentic RAG** | + Write, update, reason | Complex implementation |
+| **Agent Memory** | + Temporal, episodic, procedural | Cutting edge |
+
+**Agentic RAG Architecture:**
+
+```
+┌─────────────────────────────────────────────┐
+│                Agent Memory                  │
+├─────────────┬─────────────┬─────────────────┤
+│  Semantic   │  Episodic   │   Procedural    │
+│  (facts)    │  (events)   │   (how-to)      │
+├─────────────┴─────────────┴─────────────────┤
+│            Temporal Knowledge Graph          │
+│            (Graphiti, Zep, etc.)            │
+└─────────────────────────────────────────────┘
+                     │
+              ┌──────┴──────┐
+              │    Agent    │
+              │  (reason,   │
+              │   act,      │
+              │   learn)    │
+              └─────────────┘
+```
+
+**Key Capabilities:**
+
+| Capability | Traditional RAG | Agentic RAG |
+|------------|-----------------|-------------|
+| Read data | ✅ | ✅ |
+| Write data | ❌ | ✅ |
+| Update knowledge | ❌ | ✅ |
+| Temporal awareness | ❌ | ✅ |
+| Self-correction | ❌ | ✅ |
+| Learning from interactions | ❌ | ✅ |
+
+**Tools for Agentic RAG:**
+- **Graphiti**: Temporal knowledge graphs with bi-temporal model
+- **Zep/MemGPT**: OS-inspired memory hierarchy
+- **LlamaIndex**: Agentic document workflows
+- **Mem0**: Personalized memory layer
+
+**Implementation Example (Graphiti):**
+
+```python
+from graphiti import Graphiti
+
+# Initialize with temporal support
+graph = Graphiti(
+    connection_string="neo4j://...",
+    temporal=True
+)
+
+# Add fact with timestamp
+await graph.add_entity(
+    entity_type="customer_preference",
+    data={"customer": "user123", "preference": "dark_mode"},
+    valid_from=datetime.now(),
+    source="user_settings_update"
+)
+
+# Query with temporal context
+preferences = await graph.query(
+    "What are user123's current preferences?",
+    as_of=datetime.now()  # Point-in-time query
+)
+```
+
+**Sources:** Zep blog, Graphiti docs, LlamaIndex agentic patterns
+
+---
+
+### Q96: What are Voice Agents and Real-Time AI?
+
+**Context:** Sub-200ms latency voice agents for natural conversation.
+
+**Voice Agent Stack:**
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│     STT     │────►│     LLM     │────►│     TTS     │
+│   (Speech   │     │  (Process   │     │   (Text     │
+│   to Text)  │     │   + Reason) │     │  to Speech) │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+**Key Requirements:**
+
+| Metric | Target | Why |
+|--------|--------|-----|
+| **End-to-end latency** | <400ms | Natural conversation |
+| **STT latency** | <100ms | Real-time transcription |
+| **LLM latency** | <200ms | Quick reasoning |
+| **TTS latency** | <100ms | Natural speech |
+
+**Voice Agent Platforms (December 2025):**
+
+| Platform | Strengths | Use Case |
+|----------|-----------|----------|
+| **OpenAI Realtime API** | GPT-4o native audio | General voice apps |
+| **ElevenLabs** | High-quality TTS | Voice cloning, quality |
+| **Deepgram** | Fast STT | High-volume transcription |
+| **Retell AI** | Full stack voice | Call centers |
+| **Vapi** | Developer-friendly | Custom voice apps |
+
+**Advanced Features:**
+- **Emotion detection**: Adjust tone based on user sentiment
+- **Interruption handling**: Natural turn-taking
+- **Context carryover**: Remember conversation history
+- **Multi-lingual**: Real-time translation
+- **Voice cloning**: Custom brand voices
+
+**Challenges:**
+- Ambient noise handling
+- Accent/dialect variety
+- Latency optimization
+- Cost per minute ($0.01-0.05)
+- Compliance (call recording laws)
+
+**Sources:** OpenAI Realtime API docs, ElevenLabs research
+
+---
+
+### Q97: What is the State of Embodied AI and Robotics Agents?
+
+**Context:** AI agents controlling physical robots and interacting with the real world.
+
+**Key Players (December 2025):**
+
+| Company | Product | Achievement |
+|---------|---------|-------------|
+| **Physical Intelligence** | π0.6 | 90%+ success on manipulation |
+| **Figure AI** | Figure 03 | Mass production design |
+| **Google DeepMind** | Gemini Robotics | VLA model integration |
+| **Tesla** | Optimus Gen 2 | Walking, object handling |
+| **Boston Dynamics** | Atlas | Parkour, industrial tasks |
+
+**Vision-Language-Action (VLA) Models:**
+
+```
+┌─────────────────┐
+│  Vision Input   │──────┐
+│  (cameras,      │      │
+│   depth)        │      ▼
+└─────────────────┘   ┌──────────────────┐
+                      │   VLA Model       │
+┌─────────────────┐   │   (fused         │───► Physical
+│ Language Input  │──►│    reasoning)     │     Actions
+│  (instructions) │   └──────────────────┘
+└─────────────────┘
+```
+
+**Robotics Agent Challenges:**
+- Real-time decision making (<100ms)
+- Safety in physical environments
+- Generalization to new objects
+- Error recovery in physical space
+- Sim-to-real transfer
+
+**Success Metrics:**
+- π0.6: 90%+ task success on trained tasks
+- 70%+ on zero-shot novel objects
+- 10 Gbps data offload for fleet learning
+
+**Agent-Robot Integration Pattern:**
+```python
+class RobotAgent:
+    def __init__(self):
+        self.vision = VisionModel()
+        self.language = LanguageModel()
+        self.action = ActionModel()
+        self.safety = SafetyFilter()
+
+    def act(self, observation, instruction):
+        # Fuse vision and language
+        context = self.vision.encode(observation)
+        intent = self.language.encode(instruction)
+
+        # Generate action
+        action = self.action.predict(context, intent)
+
+        # Safety check
+        if self.safety.is_safe(action, observation):
+            return self.execute(action)
+        else:
+            return self.request_human_help()
+```
+
+**Sources:** Physical Intelligence blog, Figure AI announcements, Gemini Robotics paper
+
+---
+
+## Agent Developer Essential Skills
+
+### Q98: What Programming Skills Are Essential for Agent Development?
+
+**Context:** Core technical competencies for building production agents.
+
+**Skill Stack (Priority Order):**
+
+| Skill | Importance | Why |
+|-------|------------|-----|
+| **Python** | Critical | 90% of agent frameworks |
+| **Async programming** | Critical | Concurrent tool execution |
+| **JSON/Schema** | Critical | Tool definitions, validation |
+| **API design** | High | MCP servers, integrations |
+| **SQL** | High | Data access patterns |
+| **TypeScript** | Medium | Web integrations, LangGraph.js |
+| **Docker** | Medium | Deployment, sandboxing |
+
+**Python Essentials for Agents:**
+
+```python
+# Async/await for concurrent tools
+async def parallel_tools(queries: list[str]):
+    tasks = [search(q) for q in queries]
+    results = await asyncio.gather(*tasks)
+    return results
+
+# Pydantic for tool schemas
+from pydantic import BaseModel, Field
+
+class SearchTool(BaseModel):
+    """Search the knowledge base."""
+    query: str = Field(..., description="Search query")
+    limit: int = Field(10, ge=1, le=100)
+
+# Type hints for reliability
+def process_response(
+    response: ChatCompletionMessage,
+    tools: list[Tool]
+) -> AgentAction:
+    ...
+```
+
+**Key Libraries to Master:**
+- `langchain` / `langgraph`: Orchestration
+- `pydantic`: Validation
+- `httpx` / `aiohttp`: Async HTTP
+- `tenacity`: Retry logic
+- `structlog`: Structured logging
+
+**Sources:** Agent framework documentation, production codebases
+
+---
+
+### Q99: What LLM/ML Concepts Must Agent Developers Understand?
+
+**Context:** Foundational AI/ML knowledge for effective agent development.
+
+**Essential Concepts:**
+
+| Concept | What to Know | Why It Matters |
+|---------|--------------|----------------|
+| **Tokens** | Pricing, context limits, encoding | Cost control, context management |
+| **Temperature** | 0-2 scale, determinism tradeoff | Output consistency |
+| **Context window** | Size, attention, position effects | Architecture decisions |
+| **Embeddings** | Similarity, RAG, vector DBs | Knowledge retrieval |
+| **Fine-tuning vs prompting** | When each applies | Cost-accuracy tradeoffs |
+| **Hallucination** | Causes, detection, mitigation | Reliability |
+
+**Practical Understanding:**
+
+```python
+# Token counting matters for cost
+import tiktoken
+enc = tiktoken.encoding_for_model("gpt-4")
+tokens = len(enc.encode(text))
+cost = tokens * 0.00001  # Example rate
+
+# Temperature affects reliability
+response = client.chat.completions.create(
+    model="gpt-4o",
+    temperature=0.0,  # Deterministic for structured output
+    messages=[...]
+)
+
+# Context window management
+MAX_CONTEXT = 128_000
+RESERVED_FOR_OUTPUT = 4_000
+AVAILABLE = MAX_CONTEXT - RESERVED_FOR_OUTPUT
+```
+
+**Concepts You DON'T Need (for most agent work):**
+- Neural network architecture details
+- Training algorithms (backprop, etc.)
+- GPU programming
+- Model quantization internals
+
+**Sources:** OpenAI tokenizer, Anthropic prompt engineering guide
+
+---
+
+### Q100: How Do I Master Agent Frameworks (LangGraph, CrewAI)?
+
+**Context:** Practical learning path for agent orchestration frameworks.
+
+**Learning Path:**
+
+```
+Week 1-2: Fundamentals
+├── Single agent with tools
+├── State management basics
+└── Simple workflows
+
+Week 3-4: Intermediate
+├── Multi-agent coordination
+├── Human-in-the-loop
+└── Error handling
+
+Week 5-6: Advanced
+├── Complex state machines
+├── Production patterns
+└── Custom components
+```
+
+**LangGraph Core Concepts:**
+
+```python
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, Annotated
+
+# 1. Define state
+class AgentState(TypedDict):
+    messages: Annotated[list, add_messages]
+    current_step: str
+
+# 2. Define nodes (functions)
+def researcher(state: AgentState) -> AgentState:
+    # Research logic
+    return {"messages": [...], "current_step": "analyze"}
+
+def analyzer(state: AgentState) -> AgentState:
+    # Analysis logic
+    return {"messages": [...], "current_step": "complete"}
+
+# 3. Build graph
+graph = StateGraph(AgentState)
+graph.add_node("research", researcher)
+graph.add_node("analyze", analyzer)
+graph.add_edge("research", "analyze")
+graph.add_edge("analyze", END)
+
+# 4. Compile and run
+app = graph.compile()
+result = app.invoke({"messages": [...], "current_step": "start"})
+```
+
+**CrewAI Core Concepts:**
+
+```python
+from crewai import Agent, Task, Crew
+
+# 1. Define agents
+researcher = Agent(
+    role="Research Analyst",
+    goal="Find accurate information",
+    tools=[search_tool, web_tool]
+)
+
+writer = Agent(
+    role="Content Writer",
+    goal="Create clear documentation"
+)
+
+# 2. Define tasks
+research_task = Task(
+    description="Research topic X",
+    agent=researcher
+)
+
+write_task = Task(
+    description="Write summary of research",
+    agent=writer
+)
+
+# 3. Create crew
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, write_task]
+)
+
+# 4. Execute
+result = crew.kickoff()
+```
+
+**Practice Projects:**
+1. **Beginner**: FAQ bot with 5 tools
+2. **Intermediate**: Research agent with web search + summarization
+3. **Advanced**: Multi-agent code review system
+
+**Sources:** LangGraph tutorials, CrewAI examples, LangChain Academy
+
+---
+
+### Q101: How Do I Implement Agent Evaluation and Testing?
+
+**Context:** Testing strategies for non-deterministic agent systems.
+
+**Evaluation Pyramid:**
+
+```
+                    ┌──────────────┐
+                    │   E2E Tests   │
+                    │   (5-10%)    │
+                    └──────┬───────┘
+               ┌───────────▼───────────┐
+               │   Integration Tests    │
+               │       (20-30%)        │
+               └───────────┬───────────┘
+          ┌────────────────▼────────────────┐
+          │        Component Tests          │
+          │           (30-40%)             │
+          └────────────────┬───────────────┘
+     ┌─────────────────────▼─────────────────────┐
+     │              Unit Tests                    │
+     │              (30-40%)                     │
+     └───────────────────────────────────────────┘
+```
+
+**Key Testing Strategies:**
+
+| Level | What to Test | How |
+|-------|--------------|-----|
+| **Unit** | Tool functions, parsers | Standard pytest |
+| **Component** | Individual agents | Mock LLM responses |
+| **Integration** | Agent + tools | Real tools, mock LLM |
+| **E2E** | Full workflows | Real LLM, assertions on outcomes |
+
+**LLM Output Testing:**
+
+```python
+import pytest
+from langsmith import expect
+
+# Semantic matching (not exact string match)
+def test_customer_support_response():
+    response = agent.run("I need a refund")
+
+    # Check for required elements
+    expect(response).to_contain_concept("refund_policy")
+    expect(response).to_have_sentiment("helpful")
+    expect(response).not_to_contain("internal_only")
+
+# Behavioral testing
+def test_agent_escalates_on_uncertainty():
+    response = agent.run("Complex legal question about...")
+
+    assert response.action_type == "escalate_to_human"
+    assert "uncertain" in response.reason.lower()
+```
+
+**Evaluation Metrics:**
+
+| Metric | Measures | Target |
+|--------|----------|--------|
+| **Task completion** | Did it finish correctly? | >90% |
+| **Factual accuracy** | Are claims true? | >95% |
+| **Tool selection** | Right tool for task? | >95% |
+| **Response quality** | LLM-as-judge score | >4/5 |
+| **Latency** | Time to complete | <30s typical |
+
+**Drift Detection:**
+```python
+# Track metrics over time
+metrics = evaluate_on_golden_set(agent)
+
+if metrics.accuracy < baseline - 0.05:
+    alert("Accuracy drift detected!")
+
+if metrics.latency > baseline * 1.5:
+    alert("Latency regression!")
+```
+
+**Sources:** LangSmith evaluation docs, Braintrust, Arize Phoenix
+
+---
+
+### Q102: What Security Skills Are Required for Agent Developers?
+
+**Context:** Security knowledge essential for production agent systems.
+
+**Security Skill Checklist:**
+
+| Skill | Priority | Focus Area |
+|-------|----------|------------|
+| **Prompt injection defense** | Critical | Input validation, output filtering |
+| **Tool sandboxing** | Critical | Permission boundaries |
+| **Secret management** | Critical | No hardcoded keys |
+| **Input validation** | High | Schema enforcement |
+| **Rate limiting** | High | Abuse prevention |
+| **Audit logging** | High | Compliance, debugging |
+
+**Prompt Injection Defense:**
+
+```python
+# Multi-layer defense
+def process_user_input(user_input: str) -> str:
+    # Layer 1: Pattern detection
+    if contains_injection_patterns(user_input):
+        return sanitize_or_reject(user_input)
+
+    # Layer 2: Semantic analysis
+    if semantic_analysis_detects_manipulation(user_input):
+        log_security_event(user_input)
+        return safe_response()
+
+    # Layer 3: Output filtering
+    response = agent.run(user_input)
+    return filter_sensitive_content(response)
+```
+
+**Tool Sandboxing Layers:**
+
+```
+┌─────────────────────────────────────┐
+│  Application Layer                   │
+│  - Input validation                 │
+│  - Output sanitization              │
+├─────────────────────────────────────┤
+│  Process Layer                       │
+│  - Limited permissions              │
+│  - Resource limits                  │
+├─────────────────────────────────────┤
+│  Container Layer                     │
+│  - Network isolation                │
+│  - Filesystem restrictions          │
+├─────────────────────────────────────┤
+│  VM Layer (optional)                │
+│  - Complete isolation               │
+└─────────────────────────────────────┘
+```
+
+**OWASP LLM Top 10 (2025):**
+1. Prompt Injection
+2. Insecure Output Handling
+3. Training Data Poisoning
+4. Model Denial of Service
+5. Supply Chain Vulnerabilities
+6. Sensitive Information Disclosure
+7. Insecure Plugin Design
+8. Excessive Agency
+9. Overreliance
+10. Model Theft
+
+**Security Testing Checklist:**
+```
+□ Test prompt injection resistance
+□ Verify tool permission boundaries
+□ Check for PII leakage in outputs
+□ Test rate limiting under load
+□ Verify audit log completeness
+□ Test secret rotation procedure
+□ Validate input sanitization
+□ Check error message safety
+```
+
+**Sources:** OWASP LLM Top 10, Anthropic security guidelines
+
+---
+
 ## Quick Reference Card
 
 **Cost Optimization (50-80% reduction):**

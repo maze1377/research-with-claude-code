@@ -2874,6 +2874,701 @@ class A2ASecurityManager:
 
 ---
 
+## 11. Architecture Blueprints: 6 Universal Use Cases
+
+**Production-ready reference architectures for the most common agent applications.**
+
+### 11.1 Customer Support Bot
+
+**Use Case:** Handle customer inquiries, route issues, process simple requests, escalate complex cases.
+
+**Architecture:** Coordinator + Specialized Workers
+
+```
+                     ┌─────────────────────┐
+                     │   Intent Router     │
+                     │   (Coordinator)     │
+                     └─────────┬───────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+         ▼                     ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│  Order Agent    │   │  Refund Agent   │   │ Escalation Agent│
+│  (lookup,track) │   │ (process,verify)│   │  (human HITL)   │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+```
+
+**Key Components:**
+
+| Component | Responsibility | Tools |
+|-----------|----------------|-------|
+| **Intent Router** | Classify intent, route to specialist | intent_classifier |
+| **Order Agent** | Lookup orders, track shipments | order_api, tracking_api |
+| **Refund Agent** | Check eligibility, process refunds | refund_api, payment_api |
+| **Escalation Agent** | Create tickets, notify humans | ticketing_api, slack_api |
+
+**Implementation Pattern (LangGraph):**
+
+```python
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import create_react_agent
+
+class SupportState(TypedDict):
+    messages: Annotated[list, add_messages]
+    intent: str
+    customer_id: str
+    resolved: bool
+
+# Specialized agents
+order_agent = create_react_agent(llm, [lookup_order, track_shipment])
+refund_agent = create_react_agent(llm, [check_eligibility, process_refund])
+escalation_agent = create_react_agent(llm, [create_ticket, notify_human])
+
+def route_intent(state: SupportState) -> str:
+    intent = classify_intent(state["messages"][-1].content)
+    if intent == "order_status":
+        return "order_agent"
+    elif intent == "refund_request":
+        return "refund_agent"
+    else:
+        return "escalation_agent"
+
+# Build graph
+graph = StateGraph(SupportState)
+graph.add_node("router", route_intent)
+graph.add_node("order_agent", order_agent)
+graph.add_node("refund_agent", refund_agent)
+graph.add_node("escalation_agent", escalation_agent)
+
+graph.add_conditional_edges("router", route_intent)
+graph.add_edge("order_agent", END)
+graph.add_edge("refund_agent", END)
+graph.add_edge("escalation_agent", END)
+```
+
+**Production Metrics:**
+- First response time: <5s
+- Intent classification accuracy: >95%
+- Autonomous resolution rate: 70-85%
+- Escalation rate: 15-30%
+- Customer satisfaction: >4.0/5.0
+
+**Key Design Decisions:**
+1. **Stateless agents**: Each request is independent, context from CRM
+2. **Human escalation as tool**: Not exception handler
+3. **Audit trail**: Log every action for compliance
+4. **Graceful degradation**: Fall back to human if agent fails
+
+---
+
+### 11.2 Code Assistant
+
+**Use Case:** Analyze code, generate implementations, review changes, integrate with dev workflow.
+
+**Architecture:** Pipeline + Human-in-Loop
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Analyzer   │────►│  Generator  │────►│  Reviewer   │────►│ Integrator  │
+│  (context)  │     │   (code)    │     │  (quality)  │     │   (apply)   │
+└─────────────┘     └─────────────┘     └──────┬──────┘     └─────────────┘
+                                               │
+                                               ▼
+                                        ┌─────────────┐
+                                        │   Human     │
+                                        │  Approval   │
+                                        └─────────────┘
+```
+
+**Key Components:**
+
+| Component | Responsibility | Tools |
+|-----------|----------------|-------|
+| **Analyzer** | Understand codebase, gather context | read_file, search_code, get_symbols |
+| **Generator** | Write code, create tests | write_file, run_tests |
+| **Reviewer** | Check quality, security, style | lint, security_scan, type_check |
+| **Integrator** | Apply changes, create PRs | git_commit, create_pr |
+
+**Implementation Pattern:**
+
+```python
+class CodeAssistantState(TypedDict):
+    task: str
+    context: dict  # Relevant files, symbols
+    generated_code: str
+    review_results: dict
+    approved: bool
+
+async def analyze(state: CodeAssistantState) -> CodeAssistantState:
+    """Gather context from codebase"""
+    relevant_files = await search_codebase(state["task"])
+    symbols = await get_related_symbols(relevant_files)
+    return {"context": {"files": relevant_files, "symbols": symbols}}
+
+async def generate(state: CodeAssistantState) -> CodeAssistantState:
+    """Generate code based on context"""
+    prompt = build_generation_prompt(state["task"], state["context"])
+    code = await llm.generate(prompt)
+    return {"generated_code": code}
+
+async def review(state: CodeAssistantState) -> CodeAssistantState:
+    """Review generated code"""
+    lint_results = await run_linter(state["generated_code"])
+    security_results = await security_scan(state["generated_code"])
+    type_results = await type_check(state["generated_code"])
+
+    return {"review_results": {
+        "lint": lint_results,
+        "security": security_results,
+        "types": type_results,
+        "passed": all_passed(lint_results, security_results, type_results)
+    }}
+
+def should_integrate(state: CodeAssistantState) -> str:
+    if state["review_results"]["passed"] and state["approved"]:
+        return "integrate"
+    elif not state["review_results"]["passed"]:
+        return "regenerate"
+    else:
+        return "await_approval"
+```
+
+**Production Metrics:**
+- Context gathering: <10s
+- Code generation: 10-60s depending on complexity
+- Review pass rate: >80% on first attempt
+- Human approval rate: >90%
+
+**Key Design Decisions:**
+1. **Always gather context first**: Don't generate blind
+2. **Automated review before human**: Save human time
+3. **Iterative refinement**: Loop back on failures
+4. **Preserve existing style**: Match codebase conventions
+
+---
+
+### 11.3 Research Agent
+
+**Use Case:** Gather information from multiple sources, synthesize findings, generate reports with citations.
+
+**Architecture:** Parallel Execution + Synthesis
+
+```
+                     ┌─────────────────────┐
+                     │   Query Planner     │
+                     │   (decompose)       │
+                     └─────────┬───────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+         ▼                     ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│   Web Search    │   │   Doc Search    │   │   API Search    │
+│   Agent         │   │   Agent         │   │   Agent         │
+└────────┬────────┘   └────────┬────────┘   └────────┬────────┘
+         │                     │                     │
+         └─────────────────────┼─────────────────────┘
+                               │
+                               ▼
+                     ┌─────────────────────┐
+                     │   Synthesizer       │
+                     │   (dedupe, cite)    │
+                     └─────────────────────┘
+```
+
+**Key Components:**
+
+| Component | Responsibility | Tools |
+|-----------|----------------|-------|
+| **Query Planner** | Decompose query into sub-queries | query_decomposer |
+| **Web Search Agent** | Search public web, news | web_search, news_api |
+| **Doc Search Agent** | Search internal docs, PDFs | vector_search, doc_parser |
+| **API Search Agent** | Query structured data APIs | api_client, database |
+| **Synthesizer** | Deduplicate, resolve conflicts, cite | dedup, conflict_resolver |
+
+**Implementation Pattern:**
+
+```python
+import asyncio
+
+class ResearchState(TypedDict):
+    query: str
+    sub_queries: list[str]
+    raw_findings: list[Finding]
+    synthesized_report: str
+    citations: list[Citation]
+
+async def plan_research(state: ResearchState) -> ResearchState:
+    """Decompose query into searchable sub-queries"""
+    sub_queries = await llm.decompose_query(state["query"])
+    return {"sub_queries": sub_queries}
+
+async def parallel_search(state: ResearchState) -> ResearchState:
+    """Run all search agents in parallel"""
+    tasks = []
+    for sub_query in state["sub_queries"]:
+        tasks.extend([
+            web_search_agent.search(sub_query),
+            doc_search_agent.search(sub_query),
+            api_search_agent.search(sub_query)
+        ])
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Filter out errors, flatten results
+    findings = [r for r in results if not isinstance(r, Exception)]
+    return {"raw_findings": findings}
+
+async def synthesize(state: ResearchState) -> ResearchState:
+    """Deduplicate, resolve conflicts, generate report"""
+    # Deduplicate by semantic similarity
+    unique_findings = deduplicate(state["raw_findings"], threshold=0.9)
+
+    # Resolve conflicting information
+    resolved = resolve_conflicts(unique_findings)
+
+    # Generate report with citations
+    report = await llm.synthesize(
+        query=state["query"],
+        findings=resolved
+    )
+
+    citations = extract_citations(resolved)
+
+    return {"synthesized_report": report, "citations": citations}
+```
+
+**Production Metrics:**
+- Query decomposition: <2s
+- Parallel search: 5-30s (depends on sources)
+- Synthesis: 10-30s
+- Citation accuracy: >95%
+- Deduplication effectiveness: >90%
+
+**Key Design Decisions:**
+1. **Parallel execution**: Speed up search phase
+2. **Source attribution**: Every claim traced to source
+3. **Conflict handling**: Explicitly note disagreements
+4. **Freshness awareness**: Prefer recent sources
+
+---
+
+### 11.4 Data Analyst
+
+**Use Case:** Answer questions about data, generate SQL, create visualizations, summarize insights.
+
+**Architecture:** Tool-Heavy Single Agent
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Data Analyst Agent                       │
+│                                                               │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐│
+│  │  SQL    │ │ Schema  │ │  Chart  │ │ Insight │ │ Export  ││
+│  │Generator│ │Explorer │ │Generator│ │Summarize│ │  Data   ││
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │    Data Lake    │
+                    │  (Snowflake,    │
+                    │   BigQuery)     │
+                    └─────────────────┘
+```
+
+**Key Components:**
+
+| Tool | Responsibility | Safety |
+|------|----------------|--------|
+| **SQL Generator** | Natural language → SQL | Read-only, parameterized |
+| **Schema Explorer** | List tables, columns, samples | Metadata only |
+| **Chart Generator** | Create visualizations | Limited output size |
+| **Insight Summarizer** | Explain findings | No PII exposure |
+| **Data Exporter** | Export results | Row limits, approval |
+
+**Implementation Pattern:**
+
+```python
+class DataAnalystState(TypedDict):
+    question: str
+    schema_context: dict
+    generated_sql: str
+    query_results: list[dict]
+    visualization: str  # Chart config
+    insights: str
+
+tools = [
+    Tool(
+        name="explore_schema",
+        description="Get table names, columns, and sample data",
+        function=explore_schema
+    ),
+    Tool(
+        name="generate_sql",
+        description="Convert question to SQL query",
+        function=generate_sql
+    ),
+    Tool(
+        name="execute_query",
+        description="Run SQL and return results (max 1000 rows)",
+        function=execute_query_safe
+    ),
+    Tool(
+        name="create_chart",
+        description="Create visualization from query results",
+        function=create_chart
+    ),
+    Tool(
+        name="summarize_insights",
+        description="Generate human-readable insights from data",
+        function=summarize_insights
+    )
+]
+
+# Safety wrappers
+def execute_query_safe(sql: str) -> list[dict]:
+    """Execute SQL with safety guards"""
+    # 1. Parse and validate SQL
+    if not is_read_only(sql):
+        raise SecurityError("Only SELECT queries allowed")
+
+    # 2. Add row limit
+    sql = add_limit(sql, max_rows=1000)
+
+    # 3. Execute with timeout
+    with timeout(30):
+        results = database.execute(sql)
+
+    # 4. Redact sensitive columns
+    results = redact_pii(results)
+
+    return results
+```
+
+**Production Metrics:**
+- Schema exploration: <2s
+- SQL generation accuracy: >85%
+- Query execution: <30s (with timeout)
+- Visualization generation: <5s
+
+**Key Design Decisions:**
+1. **Read-only access**: No mutations ever
+2. **Row limits**: Prevent memory issues
+3. **PII redaction**: Automatic sensitive data handling
+4. **Query review**: Option for human approval on complex queries
+
+---
+
+### 11.5 Workflow Automator
+
+**Use Case:** Automate multi-step business processes, handle triggers, manage state, recover from failures.
+
+**Architecture:** Event-Driven Orchestrator
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Event Bus (Kafka/SQS)                      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+         ┌────────────────────┼────────────────────┐
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ Trigger Handler │  │  Step Executor  │  │ Recovery Agent  │
+│ (webhooks,cron) │  │  (run actions)  │  │  (retry,alert)  │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         │                    │                    │
+         └────────────────────┼────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │   State Store   │
+                    │  (PostgreSQL)   │
+                    └─────────────────┘
+```
+
+**Key Components:**
+
+| Component | Responsibility | Triggers |
+|-----------|----------------|----------|
+| **Trigger Handler** | Start workflows from events | Webhook, cron, queue, email |
+| **Step Executor** | Run individual workflow steps | Previous step completion |
+| **Recovery Agent** | Handle failures, retries | Step failure, timeout |
+| **State Store** | Persist workflow state | Every state change |
+
+**Workflow Definition:**
+
+```python
+@dataclass
+class WorkflowStep:
+    name: str
+    action: Callable
+    retry_policy: RetryPolicy
+    timeout: int
+    on_failure: str  # "retry" | "skip" | "abort" | "human"
+
+@dataclass
+class Workflow:
+    name: str
+    trigger: Trigger
+    steps: list[WorkflowStep]
+    timeout: int
+
+# Example: Invoice Processing Workflow
+invoice_workflow = Workflow(
+    name="invoice_processing",
+    trigger=Trigger(type="email", filter="subject:Invoice*"),
+    steps=[
+        WorkflowStep(
+            name="extract_data",
+            action=extract_invoice_data,
+            retry_policy=RetryPolicy(max_attempts=3, backoff="exponential"),
+            timeout=60,
+            on_failure="human"
+        ),
+        WorkflowStep(
+            name="validate_vendor",
+            action=validate_vendor,
+            retry_policy=RetryPolicy(max_attempts=2),
+            timeout=30,
+            on_failure="skip"
+        ),
+        WorkflowStep(
+            name="create_po",
+            action=create_purchase_order,
+            retry_policy=RetryPolicy(max_attempts=3),
+            timeout=60,
+            on_failure="abort"
+        ),
+        WorkflowStep(
+            name="notify_approver",
+            action=send_approval_request,
+            retry_policy=RetryPolicy(max_attempts=5),
+            timeout=30,
+            on_failure="retry"
+        )
+    ],
+    timeout=3600  # 1 hour total
+)
+```
+
+**Implementation Pattern:**
+
+```python
+class WorkflowEngine:
+    def __init__(self, state_store: StateStore, event_bus: EventBus):
+        self.state_store = state_store
+        self.event_bus = event_bus
+
+    async def execute_workflow(self, workflow: Workflow, trigger_data: dict):
+        """Execute workflow with state persistence and recovery"""
+
+        # Create workflow instance
+        instance = WorkflowInstance(
+            workflow_id=workflow.name,
+            trigger_data=trigger_data,
+            status="running",
+            current_step=0
+        )
+        await self.state_store.save(instance)
+
+        for i, step in enumerate(workflow.steps):
+            instance.current_step = i
+            await self.state_store.save(instance)
+
+            try:
+                result = await self.execute_step(step, instance)
+                instance.step_results[step.name] = result
+
+            except Exception as e:
+                if step.on_failure == "retry":
+                    await self.schedule_retry(instance, step)
+                elif step.on_failure == "skip":
+                    instance.step_results[step.name] = {"skipped": True}
+                elif step.on_failure == "human":
+                    await self.escalate_to_human(instance, step, e)
+                    return  # Pause until human resolves
+                else:  # abort
+                    instance.status = "failed"
+                    await self.state_store.save(instance)
+                    raise
+
+        instance.status = "completed"
+        await self.state_store.save(instance)
+```
+
+**Production Metrics:**
+- Trigger latency: <1s
+- Step execution: varies by action
+- Recovery success rate: >95%
+- End-to-end completion: >90%
+
+**Key Design Decisions:**
+1. **Idempotent steps**: Safe to retry
+2. **State persistence**: Resume after crashes
+3. **Timeout at every level**: Step, workflow, system
+4. **Graceful degradation**: Skip non-critical steps
+
+---
+
+### 11.6 Content Generator
+
+**Use Case:** Create content (blogs, emails, reports), maintain brand voice, iterate based on feedback.
+
+**Architecture:** Generator-Critic Loop
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│    Planner      │────►│   Generator     │────►│     Critic      │
+│   (outline)     │     │   (draft)       │     │   (review)      │
+└─────────────────┘     └─────────────────┘     └────────┬────────┘
+                                                         │
+                                                         │ Feedback
+                                                         │
+                                                         ▼
+                        ┌─────────────────────────────────────────┐
+                        │              Pass?                       │
+                        │   YES: Finalize   NO: Revise & Loop     │
+                        └─────────────────────────────────────────┘
+```
+
+**Key Components:**
+
+| Component | Responsibility | Model Choice |
+|-----------|----------------|--------------|
+| **Planner** | Create outline, structure | Fast model (GPT-4o-mini) |
+| **Generator** | Write content sections | Best writing model (Claude Sonnet 4.5) |
+| **Critic** | Review quality, voice, accuracy | Strong reasoning (o1, Opus 4.5) |
+| **Finalizer** | Format, add metadata | Fast model |
+
+**Implementation Pattern:**
+
+```python
+class ContentState(TypedDict):
+    brief: str  # What to write
+    outline: list[str]  # Section structure
+    drafts: dict[str, str]  # Section drafts
+    feedback: list[dict]  # Critic feedback
+    revision_count: int
+    final_content: str
+
+async def plan_content(state: ContentState) -> ContentState:
+    """Create content outline"""
+    outline = await planner_llm.create_outline(
+        brief=state["brief"],
+        guidelines=brand_guidelines
+    )
+    return {"outline": outline}
+
+async def generate_draft(state: ContentState) -> ContentState:
+    """Generate content for each section"""
+    drafts = {}
+    for section in state["outline"]:
+        draft = await writer_llm.write_section(
+            section=section,
+            brief=state["brief"],
+            tone=brand_tone,
+            previous_sections=drafts
+        )
+        drafts[section] = draft
+    return {"drafts": drafts}
+
+async def critique_content(state: ContentState) -> ContentState:
+    """Review and provide feedback"""
+    feedback = await critic_llm.review(
+        content=state["drafts"],
+        criteria={
+            "brand_voice": brand_guidelines,
+            "accuracy": fact_check_sources,
+            "engagement": readability_targets,
+            "seo": keyword_requirements
+        }
+    )
+    return {"feedback": feedback}
+
+def should_revise(state: ContentState) -> str:
+    """Determine if revision needed"""
+    if state["revision_count"] >= MAX_REVISIONS:
+        return "finalize"  # Cap revisions
+
+    if all(f["score"] >= 0.8 for f in state["feedback"]):
+        return "finalize"  # Quality threshold met
+
+    return "revise"
+
+async def revise_content(state: ContentState) -> ContentState:
+    """Apply feedback and regenerate"""
+    improved_drafts = {}
+    for section, draft in state["drafts"].items():
+        section_feedback = [f for f in state["feedback"]
+                          if f["section"] == section]
+
+        improved = await writer_llm.revise(
+            draft=draft,
+            feedback=section_feedback
+        )
+        improved_drafts[section] = improved
+
+    return {
+        "drafts": improved_drafts,
+        "revision_count": state["revision_count"] + 1
+    }
+```
+
+**Production Metrics:**
+- Planning: <10s
+- Draft generation: 30-120s (depends on length)
+- Critique: <20s
+- Average revisions: 1-2
+- Human approval rate: >85%
+
+**Key Design Decisions:**
+1. **Separate critic model**: Avoids self-confirmation bias
+2. **Revision cap**: Prevent infinite loops
+3. **Section-by-section**: Easier to iterate
+4. **Brand guidelines as context**: Consistent voice
+
+---
+
+### 11.7 Blueprint Selection Guide
+
+| Use Case | Architecture | When to Use |
+|----------|--------------|-------------|
+| **Customer Support** | Coordinator + Workers | Multiple domains, routing needed |
+| **Code Assistant** | Pipeline + HITL | Sequential steps, human approval |
+| **Research Agent** | Parallel + Synthesis | Multiple sources, time-sensitive |
+| **Data Analyst** | Tool-Heavy Single | Complex tools, single domain |
+| **Workflow Automator** | Event-Driven | Long-running, async, recovery |
+| **Content Generator** | Generator-Critic | Creative, iterative refinement |
+
+**Decision Factors:**
+
+```
+Need parallel execution?
+  YES → Research Agent pattern
+  NO  ↓
+
+Need human approval?
+  YES → Pipeline + HITL
+  NO  ↓
+
+Multiple specialized domains?
+  YES → Coordinator + Workers
+  NO  ↓
+
+Long-running with recovery?
+  YES → Event-Driven
+  NO  ↓
+
+Iterative quality improvement?
+  YES → Generator-Critic
+  NO  → Tool-Heavy Single Agent
+```
+
+---
+
 ## Resources
 
 ### Official Documentation
